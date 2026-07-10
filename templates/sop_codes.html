@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}SOP Codes - Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="intro">
+    <p class="eyebrow">{% if session_id %}Step 3{% else %}Local setup{% endif %}</p>
+    <h1>SOP Code Setup</h1>
+    <p class="description">
+      Confirm the saved abbreviations and meanings used during timesheet preparation.
+    </p>
+  </section>
+
+  {% if message %}
+    <p class="notice success">{{ message }}</p>
+  {% endif %}
+
+  {% if error %}
+    <p class="notice error">{{ error }}</p>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Add SOP Code</h2>
+    <form
+      class="inline-form"
+      data-unsaved-warning
+      method="post"
+      action="{% if session_id %}{{ url_for('session_add_sop_code', session_id=session_id) }}{% else %}/sop-codes/add{% endif %}"
+    >
+      <div class="field">
+        <label for="sop-code">Code</label>
+        <input id="sop-code" name="code" type="text" required>
+      </div>
+      <div class="field">
+        <label for="sop-meaning">Meaning</label>
+        <input id="sop-meaning" name="meaning" type="text" required>
+      </div>
+      <button type="submit">Add SOP Code</button>
+    </form>
+  </section>
+
+  <section class="panel wide-panel">
+    {% if sop_codes %}
+      <form
+        data-unsaved-warning
+        data-editable-list
+        method="post"
+        action="{% if session_id %}{{ url_for('session_update_sop_codes', session_id=session_id) }}{% else %}/sop-codes/save{% endif %}"
+      >
+        <div class="panel-head">
+          <h2>Saved SOP Codes</h2>
+          <button type="button" data-edit-list-button>Edit</button>
+        </div>
+        <p class="notice mock-notice" data-edit-mode-banner hidden>Edit Mode Active</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Meaning</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sop_code in sop_codes %}
+                <tr>
+                  <td>
+                    <input name="code" type="text" value="{{ sop_code.code }}" required readonly data-editable-field>
+                  </td>
+                  <td>
+                    <input name="meaning" type="text" value="{{ sop_code.meaning }}" required readonly data-editable-field>
+                  </td>
+                  <td class="delete-cell">
+                    <button
+                      name="delete_index"
+                      type="submit"
+                      value="{{ loop.index0 }}"
+                      formnovalidate
+                      data-confirm-delete
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <button type="submit" disabled hidden class="disabled-button" data-save-list-button>Save SOP Changes</button>
+      </form>
+    {% else %}
+      <h2>Saved SOP Codes</h2>
+      <p class="empty-state">No SOP codes yet — add a code above so timesheets can use shorthand like AL, MC, or OFF.</p>
+    {% endif %}
+  </section>
+
+  {% if session_id %}
+    <nav class="workflow-bottom-nav" aria-label="Workflow navigation">
+      <a class="button-link secondary-link" href="{{ url_for('session_workers', session_id=session_id) }}">Back</a>
+      <div class="continue-action">
+        {% if sop_codes %}
+          <a class="button-link" href="{{ url_for('session_upload', session_id=session_id) }}">
+            Save &amp; Continue to Upload Timesheets
+          </a>
+        {% else %}
+          <button type="button" class="disabled-button" disabled>Save &amp; Continue to Upload Timesheets</button>
+          <p class="continue-reason">Add at least 1 SOP code before continuing.</p>
+        {% endif %}
+      </div>
+    </nav>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', path='unsaved_warning.js') }}"></script>
+{% endblock %}

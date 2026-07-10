@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Crop Calibration - Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="intro">
+    <p class="eyebrow">Developer Test</p>
+    <h1>Crop Calibration</h1>
+    <p class="description">Only enable crop after target rows are visually correct across multiple test days.</p>
+  </section>
+
+  <section class="panel wide-panel crop-calibration-panel">
+    <form class="crop-calibration-form" method="get">
+      <div class="field">
+        <label for="calibration-image">Preprocessed image</label>
+        <select id="calibration-image" name="image_path">
+          {% for image in images %}
+            <option
+              value="{{ image.session_relative_path }}"
+              {% if image.session_relative_path == selected_image %}selected{% endif %}
+            >
+              {{ image.filename }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="calibration-template">Crop template</label>
+        <select id="calibration-template" name="template_key">
+          {% for template in templates %}
+            <option
+              value="{{ template.key }}"
+              {% if template.key == selected_template_key %}selected{% endif %}
+            >
+              {{ template.template_name }} ({% if template.enabled %}enabled{% else %}disabled{% endif %})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="calibration-day">Target day</label>
+        <input id="calibration-day" name="day" type="number" min="1" max="31" value="{{ selected_day }}">
+      </div>
+
+      <div class="actions">
+        <button type="submit">Preview Crop</button>
+      </div>
+    </form>
+
+    <div class="crop-day-links" aria-label="Quick test days">
+      {% for day in test_days %}
+        <a
+          class="button-link secondary-link"
+          href="{{ url_for('session_crop_calibration', session_id=session_id) }}?image_path={{ selected_image | urlencode }}&template_key={{ selected_template_key | urlencode }}&day={{ day }}"
+        >
+          Day {{ day }}
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel wide-panel crop-calibration-preview">
+    <div class="crop-template-details">
+      <div>
+        <span class="status-label">Selected day</span>
+        <strong>{{ selected_day }}</strong>
+      </div>
+      <div>
+        <span class="status-label">Card number</span>
+        <strong>{{ selected_template.card_number or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">Template</span>
+        <strong>{{ selected_template.template_name or selected_template_key or "Not selected" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">Enabled</span>
+        <strong>{% if selected_template.enabled %}true{% else %}false{% endif %}</strong>
+      </div>
+      <div>
+        <span class="status-label">card_left_ratio</span>
+        <strong>{{ selected_template.card_left_ratio or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">card_right_ratio</span>
+        <strong>{{ selected_template.card_right_ratio or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">card_top_ratio</span>
+        <strong>{{ selected_template.card_top_ratio or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">card_bottom_ratio</span>
+        <strong>{{ selected_template.card_bottom_ratio or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">table_top_ratio_within_card</span>
+        <strong>{{ selected_template.table_top_ratio_within_card or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">table_bottom_ratio_within_card</span>
+        <strong>{{ selected_template.table_bottom_ratio_within_card or "Not set" }}</strong>
+      </div>
+      <div>
+        <span class="status-label">day range</span>
+        <strong>{{ selected_template.first_day or "?" }}-{{ selected_template.last_day or "?" }}</strong>
+      </div>
+    </div>
+
+    {% if selected_image and selected_template_key %}
+      <div class="crop-diagnostics">
+        <h2>Diagnostics</h2>
+        {% if diagnostics_error %}
+          <p class="notice error">{{ diagnostics_error }}</p>
+        {% elif diagnostics %}
+          {% if diagnostics.warnings %}
+            <div class="notice warning">
+              <strong>Crop likely invalid. Check card/table calibration.</strong>
+              <ul>
+                {% for warning in diagnostics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+          <div class="crop-diagnostics-grid">
+            <div>
+              <span class="status-label">image width/height</span>
+              <strong>{{ diagnostics.image_size.width }} x {{ diagnostics.image_size.height }}</strong>
+            </div>
+            <div>
+              <span class="status-label">card bounds</span>
+              <strong>L{{ diagnostics.card_bounds.left }}, T{{ diagnostics.card_bounds.top }}, R{{ diagnostics.card_bounds.right }}, B{{ diagnostics.card_bounds.bottom }}</strong>
+            </div>
+            <div>
+              <span class="status-label">table bounds</span>
+              <strong>L{{ diagnostics.table_bounds.left }}, T{{ diagnostics.table_bounds.top }}, R{{ diagnostics.table_bounds.right }}, B{{ diagnostics.table_bounds.bottom }}</strong>
+            </div>
+            <div>
+              <span class="status-label">target row index</span>
+              <strong>{{ diagnostics.target_row_index }} zero-based / {{ diagnostics.target_row_index_display }} display</strong>
+            </div>
+            <div>
+              <span class="status-label">target row bounds</span>
+              <strong>T{{ diagnostics.target_row_bounds.top }}, B{{ diagnostics.target_row_bounds.bottom }}</strong>
+            </div>
+            <div>
+              <span class="status-label">crop box</span>
+              <strong>L{{ diagnostics.crop_box.left }}, T{{ diagnostics.crop_box.top }}, R{{ diagnostics.crop_box.right }}, B{{ diagnostics.crop_box.bottom }}</strong>
+            </div>
+            <div>
+              <span class="status-label">wider fallback crop box</span>
+              <strong>L{{ diagnostics.fallback_box.left }}, T{{ diagnostics.fallback_box.top }}, R{{ diagnostics.fallback_box.right }}, B{{ diagnostics.fallback_box.bottom }}</strong>
+            </div>
+          </div>
+        {% else %}
+          <p class="empty-state">Diagnostics unavailable.</p>
+        {% endif %}
+      </div>
+
+      <div class="crop-preview-grid">
+        <div>
+          <h2>Resulting row crop</h2>
+          <div class="crop-calibration-image-box">
+            <img src="{{ crop_url }}" alt="Calibration crop preview for day {{ selected_day }}">
+          </div>
+        </div>
+        <div>
+          <h2>Wider fallback crop</h2>
+          <div class="crop-calibration-image-box">
+            <img src="{{ fallback_crop_url }}" alt="Wider calibration fallback crop preview for day {{ selected_day }}">
+          </div>
+        </div>
+        <div>
+          <h2>Full image reference</h2>
+          <a href="{{ url_for('session_serve_preprocessed_file', session_id=session_id, filename=selected_image.split('/')[-1]) }}" target="_blank" rel="noopener">
+            Open full image in new tab
+          </a>
+          <div class="crop-calibration-image-box full-reference">
+            <img src="{{ url_for('session_serve_preprocessed_file', session_id=session_id, filename=selected_image.split('/')[-1]) }}" alt="Full preprocessed image reference">
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p class="empty-state">Select an image and template to preview a crop.</p>
+    {% endif %}
+  </section>
+{% endblock %}

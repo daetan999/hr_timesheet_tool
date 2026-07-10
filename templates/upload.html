@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Timesheets - Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="intro">
+    <p class="eyebrow">{% if session_id %}Step 4{% else %}Stage 1C{% endif %}</p>
+    <h1>Upload Timesheets</h1>
+    <p class="description">
+      Upload time card images and PDFs for this monthly session.
+    </p>
+  </section>
+
+  {% if message %}
+    <p class="notice success">{{ message }}</p>
+  {% endif %}
+
+  {% if error %}
+    <div class="notice error">
+      <p>{{ error }}</p>
+      {% if invalid_files %}
+        <ul>
+          {% for file in invalid_files %}
+            <li>{{ file.filename }} - {{ file.reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Select Files</h2>
+    <form
+      class="inline-form"
+      data-unsaved-warning="files"
+      method="post"
+      action="{% if session_id %}{{ url_for('session_upload_files', session_id=session_id) }}{% else %}/upload{% endif %}"
+      enctype="multipart/form-data"
+    >
+      <div class="field">
+        <label for="timesheet-files">Timesheet files</label>
+        <input
+          id="timesheet-files"
+          name="files"
+          type="file"
+          accept=".jpg,.jpeg,.png,.heic,.pdf,image/jpeg,image/png,image/heic,application/pdf"
+          multiple
+        >
+      </div>
+      <button type="submit">Upload Files</button>
+    </form>
+  </section>
+
+  <section class="panel wide-panel">
+    <h2>Uploaded Files</h2>
+    {% if uploaded_files %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Original Filename</th>
+              <th>Stored Filename</th>
+              <th>Size</th>
+              {% if session_id %}
+                <th>Action</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for file in uploaded_files %}
+              <tr>
+                <td>{{ file.original_filename }}</td>
+                <td>{{ file.stored_filename }}</td>
+                <td>{{ file.size_kb }} KB</td>
+                {% if session_id %}
+                  <td>
+                    <form
+                      method="post"
+                      action="{{ url_for('session_delete_uploaded_file', session_id=session_id) }}"
+                      onsubmit="return window.confirm('Are you sure you want to delete this uploaded file?');"
+                    >
+                      <input type="hidden" name="stored_filename" value="{{ file.stored_filename }}">
+                      <button type="submit" class="danger-button">Delete</button>
+                    </form>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">No files uploaded yet — choose timesheet photos or PDFs above to begin.</p>
+    {% endif %}
+  </section>
+
+  {% if session_id %}
+    <nav class="workflow-bottom-nav" aria-label="Workflow navigation">
+      <a class="button-link secondary-link" href="{{ url_for('session_sop_codes', session_id=session_id) }}">Back</a>
+      <div class="continue-action">
+        {% if uploaded_files %}
+          <a class="button-link" href="{{ url_for('session_review', session_id=session_id) }}">
+            Save &amp; Continue to Review Extraction
+          </a>
+        {% else %}
+          <button type="button" class="disabled-button" disabled>Save &amp; Continue to Review Extraction</button>
+          <p class="continue-reason">Upload at least 1 file before continuing.</p>
+        {% endif %}
+      </div>
+    </nav>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', path='unsaved_warning.js') }}"></script>
+{% endblock %}

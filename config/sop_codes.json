@@ -1,0 +1,14 @@
+[
+  {
+    "code": "OFF",
+    "meaning": "Off day"
+  },
+  {
+    "code": "EARLY OUT 早回",
+    "meaning": "Leave early"
+  },
+  {
+    "code": "LATE IN 迟到",
+    "meaning": "Enter shift late"
+  }
+]
