@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 640" font-family="'IBM Plex Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b2733"/>
+    </marker>
+    <marker id="arrowloop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a4a12"/>
+    </marker>
+  </defs>
+
+  <!-- canvas -->
+  <rect x="0" y="0" width="1560" height="640" rx="18" fill="#f2f5ea" stroke="#d8dfcd"/>
+  <text x="44" y="52" font-size="15" letter-spacing="4" fill="#5c6b60" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace" font-weight="600">END-TO-END SUBMISSION PIPELINE</text>
+  <text x="1516" y="52" text-anchor="end" font-size="13" fill="#8a958b" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace">CAPTURE → VALIDATE → PERSIST → NOTIFY</text>
+
+  <!-- ============ STAGE 1 ============ -->
+  <g>
+    <rect x="40" y="96" width="330" height="330" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+    <circle cx="78" cy="140" r="17" fill="#1b2733"/>
+    <text x="78" y="146" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">1</text>
+    <text x="106" y="137" font-size="17" font-weight="700" fill="#16232e">User Interface</text>
+    <text x="106" y="157" font-size="13.5" fill="#5c6b60">Submission portal</text>
+    <line x1="62" y1="180" x2="348" y2="180" stroke="#e4e9da"/>
+    <text x="62" y="212" font-size="13.5" fill="#33413a">Monthly review sessions</text>
+    <text x="62" y="240" font-size="13.5" fill="#33413a">Time cards: photos · scans</text>
+    <text x="62" y="262" font-size="13.5" fill="#33413a">PDF · XLSX attendance tables</text>
+    <text x="62" y="290" font-size="13.5" fill="#33413a">Multi-file batch upload with</text>
+    <text x="62" y="312" font-size="13.5" fill="#33413a">de-duplication by content hash</text>
+    <rect x="62" y="342" width="286" height="34" rx="8" fill="#f2f5ea"/>
+    <text x="76" y="364" font-size="12.5" fill="#2e5d43" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace">POST /sessions/{id}/upload</text>
+  </g>
+
+  <!-- arrow 1→2 -->
+  <line x1="370" y1="256" x2="416" y2="256" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="393" y="238" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">multipart</text>
+  <text x="393" y="252" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">payload</text>
+
+  <!-- ============ STAGE 2 ============ -->
+  <g>
+    <rect x="420" y="96" width="330" height="330" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+    <circle cx="458" cy="140" r="17" fill="#1b2733"/>
+    <text x="458" y="146" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">2</text>
+    <text x="486" y="137" font-size="17" font-weight="700" fill="#16232e">Parsing &amp; Validation</text>
+    <text x="486" y="157" font-size="13.5" fill="#5c6b60">Async backend ingestion</text>
+    <line x1="442" y1="180" x2="728" y2="180" stroke="#e4e9da"/>
+    <text x="442" y="212" font-size="13.5" fill="#33413a">MIME · size · session-state checks</text>
+    <text x="442" y="240" font-size="13.5" fill="#33413a">Document normalization</text>
+    <text x="442" y="262" font-size="13.5" fill="#33413a">(rasterize · crop · classify)</text>
+    <text x="442" y="290" font-size="13.5" fill="#33413a">Business rules: SOP codes,</text>
+    <text x="442" y="312" font-size="13.5" fill="#33413a">date bounds, duplicate days</text>
+    <rect x="442" y="342" width="286" height="34" rx="8" fill="#f2f5ea"/>
+    <text x="456" y="364" font-size="12.5" fill="#2e5d43" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace">confidence score per row</text>
+  </g>
+
+  <!-- arrow 2→3 -->
+  <line x1="750" y1="256" x2="796" y2="256" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="773" y="238" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">validated</text>
+  <text x="773" y="252" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">rows</text>
+
+  <!-- ============ STAGE 3 ============ -->
+  <g>
+    <rect x="800" y="96" width="330" height="330" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+    <circle cx="838" cy="140" r="17" fill="#1b2733"/>
+    <text x="838" y="146" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">3</text>
+    <text x="866" y="137" font-size="17" font-weight="700" fill="#16232e">Relational Upsert</text>
+    <text x="866" y="157" font-size="13.5" fill="#5c6b60">Durable system of record</text>
+    <line x1="822" y1="180" x2="1108" y2="180" stroke="#e4e9da"/>
+    <text x="822" y="212" font-size="13.5" fill="#33413a">Idempotent UPSERT keyed by</text>
+    <text x="822" y="234" font-size="13.5" fill="#33413a">row_id — safe to re-run extraction</text>
+    <text x="822" y="262" font-size="13.5" fill="#33413a">Reviewed rows are never</text>
+    <text x="822" y="284" font-size="13.5" fill="#33413a">overwritten by new batches</text>
+    <text x="822" y="312" font-size="13.5" fill="#33413a">Audit fields on every write</text>
+    <rect x="822" y="342" width="286" height="34" rx="8" fill="#f2f5ea"/>
+    <text x="836" y="364" font-size="12.5" fill="#2e5d43" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace">TimesheetLogs · Workflows</text>
+  </g>
+
+  <!-- arrow 3→4 -->
+  <line x1="1130" y1="256" x2="1176" y2="256" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="1153" y="238" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">commit</text>
+  <text x="1153" y="252" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">events</text>
+
+  <!-- ============ STAGE 4 ============ -->
+  <g>
+    <rect x="1180" y="96" width="330" height="330" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+    <circle cx="1218" cy="140" r="17" fill="#8a4a12"/>
+    <text x="1218" y="146" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">4</text>
+    <text x="1246" y="137" font-size="17" font-weight="700" fill="#16232e">Triggers &amp; Alerts</text>
+    <text x="1246" y="157" font-size="13.5" fill="#5c6b60">Event-driven visibility</text>
+    <line x1="1202" y1="180" x2="1488" y2="180" stroke="#e4e9da"/>
+    <text x="1202" y="212" font-size="13.5" fill="#33413a">Low-confidence rows flagged</text>
+    <text x="1202" y="234" font-size="13.5" fill="#33413a">into the HR review queue</text>
+    <text x="1202" y="262" font-size="13.5" fill="#33413a">Exception alerts: unclear times,</text>
+    <text x="1202" y="284" font-size="13.5" fill="#33413a">blank days, unknown SOP codes</text>
+    <text x="1202" y="312" font-size="13.5" fill="#33413a">Payroll-ready .xlsx handoff</text>
+    <rect x="1202" y="342" width="286" height="34" rx="8" fill="#fdf1ef"/>
+    <text x="1216" y="364" font-size="12.5" fill="#a33a2a" font-family="'IBM Plex Mono', ui-monospace, Menlo, monospace">rows_pending_review → HR</text>
+  </g>
+
+  <!-- HR review feedback loop -->
+  <path d="M1345,426 V500 Q1345,514 1331,514 H979 Q965,514 965,500 V430" fill="none" stroke="#8a4a12" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowloop)"/>
+  <rect x="1000" y="530" width="330" height="30" rx="15" fill="#fbf7ec" stroke="#e3d9bd"/>
+  <text x="1165" y="550" text-anchor="middle" font-size="12.5" fill="#8a4a12" font-style="italic">HR confirms / corrects → decisions re-upserted</text>
+
+  <!-- footer note -->
+  <text x="44" y="600" font-size="12.5" fill="#8a958b">Every state transition is auditable: extraction batch id, confidence, reviewer decision, and timestamps are stored with each row.</text>
+</svg>

@@ -23,7 +23,12 @@ Manual workforce time tracking — paper time cards, ad-hoc spreadsheets, and em
 
 ## Visual Architecture
 
-### System Flow — End-to-End Submission Sequence
+### System Flow — End-to-End Submission Pipeline
+
+![End-to-end submission pipeline: User Interface → Payload Parsing & Validation → Relational DB Upsert → Event Triggers & Alerts](docs/assets/system-flow.svg)
+
+<details>
+<summary><strong>Diagram-as-code source (Mermaid sequence diagram)</strong></summary>
 
 ```mermaid
 sequenceDiagram
@@ -51,7 +56,14 @@ sequenceDiagram
     API-->>HR: Payroll-ready Excel workbook (.xlsx)
 ```
 
+</details>
+
 ### Entity Relationship Diagram — Target Relational Schema
+
+![Entity relationship diagram: EMPLOYEES, SUBMISSION_SESSIONS, TIMESHEET_LOGS, APPROVAL_WORKFLOWS, and SOP_CODES with primary and foreign keys](docs/assets/data-schema.svg)
+
+<details>
+<summary><strong>Diagram-as-code source (Mermaid ERD)</strong></summary>
 
 ```mermaid
 erDiagram
@@ -114,6 +126,30 @@ erDiagram
         boolean payroll_impacting
     }
 ```
+
+</details>
+
+---
+
+## Product Snapshots
+
+> Snapshots below are rendered from the application's own templates running in **mock-extraction mode** with sanitized sample data — no production data, credentials, or live integrations are involved.
+
+### Review Queue — Exception-Driven HR Workflow
+
+The core of the product: extracted entries land in a triaged review queue where low-confidence rows are flagged with a concrete, human-readable reason before anything reaches payroll.
+
+![Review Extraction screen showing the triaged queue with flagged exceptions](docs/assets/screenshots/review.png)
+
+### Guided Monthly Workflow
+
+| Session Dashboard | Timesheet Upload |
+| --- | --- |
+| ![Home screen with new-month setup and in-progress sessions](docs/assets/screenshots/home.png) | ![Upload screen with batch file intake and stored-file registry](docs/assets/screenshots/upload.png) |
+
+| Worker Masterlist | SOP Code Glossary |
+| --- | --- |
+| ![Worker masterlist management screen](docs/assets/screenshots/workers.png) | ![SOP code setup screen with editable code glossary](docs/assets/screenshots/sop-codes.png) |
 
 ---
 
