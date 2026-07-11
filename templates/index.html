@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="home-hero">
+    <h1>Timesheet Analysis Tool</h1>
+    <p class="description">
+      Start a monthly timesheet review or continue a month already in progress.
+    </p>
+  </section>
+
+  <section class="home-actions" aria-label="Monthly session actions">
+    <form class="action-panel" method="post" action="/start">
+      <h2>Start New Month</h2>
+      <div class="month-grid">
+        <div class="field">
+          <label for="month">Month</label>
+          <select id="month" name="month" required>
+            {% for month in months %}
+              <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                {{ month.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="year">Year</label>
+          <select id="year" name="year" required>
+            {% for year in years %}
+              <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                {{ year }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="submit">Start New Month</button>
+    </form>
+
+    <section class="action-panel">
+      <h2>Continue Existing Month</h2>
+      {% if recent_sessions %}
+        <div class="session-list">
+          {% for session in recent_sessions %}
+            <div class="session-row-group">
+              <a class="session-row" href="{{ url_for('session_workers', session_id=session.session_id) }}">
+                <span>
+                  {{ month_labels[session.month] }} {{ session.year }}
+                </span>
+                <strong>{{ session.status }}</strong>
+              </a>
+              <form
+                class="session-delete-form"
+                method="post"
+                action="{{ url_for('session_delete', session_id=session.session_id) }}"
+                data-delete-session="{{ month_labels[session.month] }} {{ session.year }}"
+              >
+                <button type="submit" class="danger-button">Delete</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-state">No months in progress yet — pick a month and year on the left to start one.</p>
+      {% endif %}
+    </section>
+  </section>
+
+  <section class="master-lists" aria-label="Master lists">
+    <h2>Master Lists</h2>
+    <p class="description">Shared across every month — the worker roster and the SOP code glossary.</p>
+    <div class="master-list-links">
+      <a class="master-list-link" href="/workers">View &amp; edit workers</a>
+      <a class="master-list-link" href="/sop-codes">View &amp; edit SOP codes</a>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.querySelectorAll("[data-delete-session]").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        var label = form.getAttribute("data-delete-session");
+        var typed = window.prompt(
+          "This permanently deletes " + label + " — its uploads, review work, and exports. Type DELETE to confirm."
+        );
+        if (typed !== "DELETE") {
+          event.preventDefault();
+        }
+      });
+    });
+  </script>
+{% endblock %}

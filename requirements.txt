@@ -1,0 +1,10 @@
+fastapi==0.136.1
+Jinja2==3.1.6
+openpyxl==3.1.5
+openai==2.9.0
+Pillow==12.0.0
+pillow-heif==1.1.1
+PyMuPDF==1.26.6
+python-dotenv==1.2.1
+python-multipart==0.0.27
+uvicorn==0.46.0
