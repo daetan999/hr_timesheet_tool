@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 1000" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="1560" height="1000" rx="18" fill="#f2f5ea" stroke="#d8dfcd"/>
+<text x="44" y="56" font-size="15" letter-spacing="4" fill="#5c6b60" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-weight="600">RELATIONAL DATA SCHEMA</text>
+<path d="M410,156.0 H505 V324.0 H600" fill="none" stroke="#77857a" stroke-width="1.8"/>
+<text x="505" y="140.0" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">submits</text>
+<circle cx="418" cy="156.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="418" y="160.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">1</text>
+<circle cx="592" cy="324.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="592" y="330.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">*</text>
+<path d="M410,616.0 H540 V352.0 H600" fill="none" stroke="#77857a" stroke-width="1.8"/>
+<text x="540" y="600.0" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">batches</text>
+<circle cx="418" cy="616.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="418" y="620.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">1</text>
+<circle cx="592" cy="352.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="592" y="358.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">*</text>
+<path d="M1170,696.0 H1065 V380.0 H980" fill="none" stroke="#77857a" stroke-width="1.8"/>
+<text x="1065" y="680.0" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">classifies</text>
+<circle cx="1162" cy="696.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="1162" y="700.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">1</text>
+<circle cx="988" cy="380.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="988" y="386.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">*</text>
+<path d="M980,296.0 H1075 V204.0 H1170" fill="none" stroke="#77857a" stroke-width="1.8"/>
+<text x="1075" y="188.0" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">governed by</text>
+<circle cx="988" cy="296.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="988" y="300.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">1</text>
+<circle cx="1162" cy="204.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="1162" y="210.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">*</text>
+<path d="M235,100 V78 H1100 V232.0 H1170" fill="none" stroke="#77857a" stroke-width="1.8" stroke-dasharray="6 5"/>
+<text x="700" y="72" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">reviews as approver</text>
+<circle cx="235" cy="94" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="235" y="98" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a">1</text>
+<circle cx="1162" cy="232.0" r="9" fill="#f2f5ea" stroke="#77857a" stroke-width="1.4"/>
+<text x="1162" y="238.0" text-anchor="middle" font-size="12.5" font-weight="700" fill="#33413a">*</text>
+<g><rect x="60" y="100" width="350" height="276" rx="12" fill="#ffffff" stroke="#c9d2bd"/>
+<path d="M60,112 a12,12 0 0 1 12,-12 h326 a12,12 0 0 1 12,12 v30 h-350 z" fill="#1b2733"/>
+<text x="76" y="127" font-size="15" font-weight="700" fill="#ffffff" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">EMPLOYEES</text>
+<text x="76" y="160.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">employee_id</text>
+<text x="394" y="160.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="315" y="147.0" width="34" height="18" rx="9" fill="#2e5d43" stroke="#2e5d43"/>
+<text x="332" y="160.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#ffffff">PK</text>
+<rect x="64" y="170" width="342" height="28" fill="#f6f8f0"/>
+<text x="76" y="188.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">full_name</text>
+<text x="394" y="188.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="76" y="216.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">department</text>
+<text x="394" y="216.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="64" y="226" width="342" height="28" fill="#f6f8f0"/>
+<text x="76" y="244.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">employment_type</text>
+<text x="394" y="244.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="76" y="272.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">hire_date</text>
+<text x="394" y="272.5" text-anchor="end" font-size="12" fill="#8a958b">date</text>
+<rect x="64" y="282" width="342" height="28" fill="#f6f8f0"/>
+<text x="76" y="300.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">active</text>
+<text x="394" y="300.5" text-anchor="end" font-size="12" fill="#8a958b">bool</text>
+<text x="76" y="328.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">created_at</text>
+<text x="394" y="328.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+<rect x="64" y="338" width="342" height="28" fill="#f6f8f0"/>
+<text x="76" y="356.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">updated_at</text>
+<text x="394" y="356.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+</g>
+<g><rect x="60" y="560" width="350" height="192" rx="12" fill="#ffffff" stroke="#c9d2bd"/>
+<path d="M60,572 a12,12 0 0 1 12,-12 h326 a12,12 0 0 1 12,12 v30 h-350 z" fill="#1b2733"/>
+<text x="76" y="587" font-size="15" font-weight="700" fill="#ffffff" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">SUBMISSION_SESSIONS</text>
+<text x="76" y="620.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">session_id</text>
+<text x="394" y="620.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="315" y="607.0" width="34" height="18" rx="9" fill="#2e5d43" stroke="#2e5d43"/>
+<text x="332" y="620.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#ffffff">PK</text>
+<rect x="64" y="630" width="342" height="28" fill="#f6f8f0"/>
+<text x="76" y="648.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">period_label</text>
+<text x="394" y="648.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="76" y="676.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">status</text>
+<text x="394" y="676.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="64" y="686" width="342" height="28" fill="#f6f8f0"/>
+<text x="76" y="704.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">created_at</text>
+<text x="394" y="704.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+<text x="76" y="732.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">closed_at</text>
+<text x="394" y="732.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+</g>
+<g><rect x="600" y="240" width="380" height="416" rx="12" fill="#ffffff" stroke="#c9d2bd"/>
+<path d="M600,252 a12,12 0 0 1 12,-12 h356 a12,12 0 0 1 12,12 v30 h-380 z" fill="#1b2733"/>
+<text x="616" y="267" font-size="15" font-weight="700" fill="#ffffff" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">TIMESHEET_LOGS</text>
+<text x="616" y="300.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">row_id</text>
+<text x="964" y="300.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="885" y="287.0" width="34" height="18" rx="9" fill="#2e5d43" stroke="#2e5d43"/>
+<text x="902" y="300.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#ffffff">PK</text>
+<rect x="604" y="310" width="372" height="28" fill="#f6f8f0"/>
+<text x="616" y="328.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">employee_id</text>
+<text x="964" y="328.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="885" y="315.0" width="34" height="18" rx="9" fill="#eef2e4" stroke="#7ba989"/>
+<text x="902" y="328.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2e5d43">FK</text>
+<text x="616" y="356.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">session_id</text>
+<text x="964" y="356.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="885" y="343.0" width="34" height="18" rx="9" fill="#eef2e4" stroke="#7ba989"/>
+<text x="902" y="356.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2e5d43">FK</text>
+<rect x="604" y="366" width="372" height="28" fill="#f6f8f0"/>
+<text x="616" y="384.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">sop_code</text>
+<text x="964" y="384.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="885" y="371.0" width="34" height="18" rx="9" fill="#eef2e4" stroke="#7ba989"/>
+<text x="902" y="384.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2e5d43">FK</text>
+<text x="616" y="412.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">work_date</text>
+<text x="964" y="412.5" text-anchor="end" font-size="12" fill="#8a958b">date</text>
+<rect x="604" y="422" width="372" height="28" fill="#f6f8f0"/>
+<text x="616" y="440.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">clock_in</text>
+<text x="964" y="440.5" text-anchor="end" font-size="12" fill="#8a958b">time</text>
+<text x="616" y="468.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">clock_out</text>
+<text x="964" y="468.5" text-anchor="end" font-size="12" fill="#8a958b">time</text>
+<rect x="604" y="478" width="372" height="28" fill="#f6f8f0"/>
+<text x="616" y="496.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">hours_computed</text>
+<text x="964" y="496.5" text-anchor="end" font-size="12" fill="#8a958b">decimal</text>
+<text x="616" y="524.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">confidence_score</text>
+<text x="964" y="524.5" text-anchor="end" font-size="12" fill="#8a958b">decimal</text>
+<rect x="604" y="534" width="372" height="28" fill="#f6f8f0"/>
+<text x="616" y="552.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">review_status</text>
+<text x="964" y="552.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="616" y="580.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">source_document_ref</text>
+<text x="964" y="580.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="604" y="590" width="372" height="28" fill="#f6f8f0"/>
+<text x="616" y="608.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">extracted_at</text>
+<text x="964" y="608.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+<text x="616" y="636.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">reviewed_at</text>
+<text x="964" y="636.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+</g>
+<g><rect x="1170" y="120" width="350" height="276" rx="12" fill="#ffffff" stroke="#c9d2bd"/>
+<path d="M1170,132 a12,12 0 0 1 12,-12 h326 a12,12 0 0 1 12,12 v30 h-350 z" fill="#1b2733"/>
+<text x="1186" y="147" font-size="15" font-weight="700" fill="#ffffff" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">APPROVAL_WORKFLOWS</text>
+<text x="1186" y="180.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">workflow_id</text>
+<text x="1504" y="180.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="1425" y="167.0" width="34" height="18" rx="9" fill="#2e5d43" stroke="#2e5d43"/>
+<text x="1442" y="180.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#ffffff">PK</text>
+<rect x="1174" y="190" width="342" height="28" fill="#f6f8f0"/>
+<text x="1186" y="208.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">row_id</text>
+<text x="1504" y="208.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="1425" y="195.0" width="34" height="18" rx="9" fill="#eef2e4" stroke="#7ba989"/>
+<text x="1442" y="208.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2e5d43">FK</text>
+<text x="1186" y="236.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">approver_employee_id</text>
+<text x="1504" y="236.5" text-anchor="end" font-size="12" fill="#8a958b">uuid</text>
+<rect x="1425" y="223.0" width="34" height="18" rx="9" fill="#eef2e4" stroke="#7ba989"/>
+<text x="1442" y="236.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#2e5d43">FK</text>
+<rect x="1174" y="246" width="342" height="28" fill="#f6f8f0"/>
+<text x="1186" y="264.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">workflow_state</text>
+<text x="1504" y="264.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="1186" y="292.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">decision</text>
+<text x="1504" y="292.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="1174" y="302" width="342" height="28" fill="#f6f8f0"/>
+<text x="1186" y="320.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">decision_reason</text>
+<text x="1504" y="320.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="1186" y="348.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">assigned_at</text>
+<text x="1504" y="348.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+<rect x="1174" y="358" width="342" height="28" fill="#f6f8f0"/>
+<text x="1186" y="376.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">decided_at</text>
+<text x="1504" y="376.5" text-anchor="end" font-size="12" fill="#8a958b">timestamptz</text>
+</g>
+<g><rect x="1170" y="640" width="350" height="164" rx="12" fill="#ffffff" stroke="#c9d2bd"/>
+<path d="M1170,652 a12,12 0 0 1 12,-12 h326 a12,12 0 0 1 12,12 v30 h-350 z" fill="#1b2733"/>
+<text x="1186" y="667" font-size="15" font-weight="700" fill="#ffffff" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">SOP_CODES</text>
+<text x="1186" y="700.5" font-size="13" fill="#16232e" font-weight="600" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">sop_code</text>
+<text x="1504" y="700.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="1425" y="687.0" width="34" height="18" rx="9" fill="#2e5d43" stroke="#2e5d43"/>
+<text x="1442" y="700.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#ffffff">PK</text>
+<rect x="1174" y="710" width="342" height="28" fill="#f6f8f0"/>
+<text x="1186" y="728.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">display_label</text>
+<text x="1504" y="728.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<text x="1186" y="756.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">category</text>
+<text x="1504" y="756.5" text-anchor="end" font-size="12" fill="#8a958b">text</text>
+<rect x="1174" y="766" width="342" height="28" fill="#f6f8f0"/>
+<text x="1186" y="784.5" font-size="13" fill="#16232e" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">payroll_impacting</text>
+<text x="1504" y="784.5" text-anchor="end" font-size="12" fill="#8a958b">bool</text>
+</g>
+<text x="44" y="970" font-size="12.5" fill="#8a958b">Blueprint schema — file-backed stores in this repository map 1:1 onto these tables for the production PostgreSQL migration.</text>
+</svg>

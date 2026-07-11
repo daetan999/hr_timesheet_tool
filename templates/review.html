@@ -1,0 +1,2802 @@
+{% extends "base.html" %}
+
+{% block title %}Review Extraction - Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="intro">
+    <p class="eyebrow">{% if session_id %}Step 5{% else %}Stage 1D{% endif %}</p>
+    <div class="review-title-row">
+      <h1>Review Extraction</h1>
+      {% if session %}
+        <p class="session-tag">{{ session.month_label }} {{ session.year }}</p>
+      {% endif %}
+    </div>
+    <p class="description">
+      Review each extracted time entry against its source file before export.
+    </p>
+  </section>
+
+  <div class="review-status-line" aria-label="Session status">
+    {% if extraction_status.requested_mode == "mock" %}
+      <span class="status-pill status-pill-mock">Test Mode — no AI charges</span>
+    {% elif extraction_status.api_key_present %}
+      <span class="status-pill status-pill-live">Live AI extraction enabled</span>
+    {% else %}
+      <span class="status-pill status-pill-warning">AI not configured — contact your administrator</span>
+    {% endif %}
+    {% if session_id and review_counts %}
+      <span class="status-separator">·</span>
+      <span>{{ review_counts.needs_review }} row{% if review_counts.needs_review != 1 %}s{% endif %} need review</span>
+    {% endif %}
+    {% if session_id and unknown_sop_codes %}
+      <span class="status-separator">·</span>
+      <span>{{ unknown_sop_codes|length }} unknown SOP code{% if unknown_sop_codes|length != 1 %}s{% endif %}</span>
+    {% endif %}
+  </div>
+  {% if extraction_status.warning == "Unknown extraction mode. Running in mock mode." %}
+    <p class="notice error">{{ extraction_status.warning }}</p>
+  {% endif %}
+  {% if message %}
+    <p class="notice success">{{ message }}</p>
+  {% endif %}
+
+  {% if error %}
+    <p class="notice error">{{ error }}</p>
+  {% endif %}
+
+  {% if export_warning and session_id %}
+    <p class="notice error">
+      {{ export_warning }} row{% if export_warning != "1" %}s{% endif %} still require attention.
+      Export anyway?
+      <a href="{{ url_for('session_export_excel', session_id=session_id) }}?force=1">Export with unresolved rows</a>
+    </p>
+  {% endif %}
+
+  {% if export_path and session_id %}
+    <p class="notice success">
+      Excel file ready:
+      <a href="{{ url_for('session_download_export', session_id=session_id, filename=export_path) }}">
+        Download {{ export_path }}
+      </a>
+    </p>
+  {% endif %}
+
+  {% if session_id and has_reviewed_rows %}
+    <p class="notice success" data-export-backup hidden>
+      Excel export started:
+      <a
+        data-export-backup-link
+        href="{{ url_for('session_download_export', session_id=session_id, filename='Timesheet Report - ' ~ session.month_label ~ ' ' ~ session.year ~ '.xlsx') }}"
+      >
+        Download Timesheet Report - {{ session.month_label }} {{ session.year }}.xlsx
+      </a>
+    </p>
+  {% endif %}
+
+  {% if not has_uploads %}
+    <p class="notice error">
+      No uploads found. Upload files first so review rows can reference source timesheets.
+    </p>
+  {% endif %}
+
+  {% if preprocessing_failures %}
+    <div class="notice error">
+      <p>Some uploaded files could not be preprocessed. Upload can continue, but these files need attention before real AI extraction.</p>
+      <ul>
+        {% for failure in preprocessing_failures %}
+          <li>{{ failure.original_filename }} - {{ failure.error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if session_id and extraction_status.openai_enabled %}
+    <section class="panel wide-panel advanced-extraction-panel">
+      <h2>Advanced extraction tools</h2>
+      <form
+        class="inline-form"
+        method="post"
+        action="{{ url_for('session_run_live_extraction_test', session_id=session_id) }}"
+      >
+        <div class="field">
+          <label for="selected-preprocessed-file">Preprocessed file</label>
+          <select id="selected-preprocessed-file" name="selected_preprocessed_file">
+            <option value="">Select one preprocessed file</option>
+            {% for file in live_extraction_options %}
+              <option value="{{ file.value }}">{{ file.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit">Run Selected File Extraction</button>
+      </form>
+      {% if not live_extraction_options %}
+        <p class="empty-state">No preprocessed files are available yet.</p>
+      {% endif %}
+      {% if live_extraction_options %}
+        <div class="inline-form">
+          <button
+            type="button"
+            data-live-extraction-batch
+            data-live-extraction-start-endpoint="{{ url_for('session_start_live_extraction_batch', session_id=session_id) }}"
+            data-live-extraction-base-endpoint="{{ url_for('session_review', session_id=session_id) }}/live-extraction-batch"
+          >
+            Run Extraction for All Files
+          </button>
+        </div>
+        <p class="empty-state">
+          Processes all eligible active preprocessed files in this session and skips failed, deleted, missing, or inactive files.
+        </p>
+        <p class="sop-inline-message" data-live-extraction-summary hidden></p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if session_id and unknown_sop_codes %}
+    <section
+      class="panel wide-panel"
+      data-sop-add-endpoint="{{ url_for('session_add_unknown_sop_code_json', session_id=session_id) }}"
+    >
+      <h2>Unknown SOP Codes Detected</h2>
+      <p class="sop-inline-message" data-sop-global-message hidden></p>
+      <div class="unknown-sop-list">
+        {% for item in unknown_sop_codes %}
+          <div
+            class="unknown-sop-form"
+            data-sop-add-control
+            data-sop-code="{{ item.code }}"
+          >
+            <div>
+              <span class="status-label">Detected Text (AI read)</span>
+              <strong>{{ item.code }}</strong>
+            </div>
+            <div class="field">
+              <label for="unknown-code-{{ loop.index0 }}">Short Code <span class="field-hint">e.g. AL, MC, OFF — max 20 characters</span></label>
+              <input id="unknown-code-{{ loop.index0 }}" data-sop-code-input type="text" maxlength="20" placeholder="e.g. OFF" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="unknown-meaning-{{ loop.index0 }}">Meaning</label>
+              <input id="unknown-meaning-{{ loop.index0 }}" data-sop-meaning type="text" value="">
+            </div>
+            <label class="checkbox-label">
+              <input data-sop-apply type="checkbox" value="true">
+              Apply this SOP code to all matching review rows
+            </label>
+            <button type="button" data-sop-add-button>Add to SOP Presets</button>
+            <p class="sop-inline-message" data-sop-message hidden></p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if session_id %}
+    <nav class="review-tabs" aria-label="Review queue filters">
+      <button
+        type="button"
+        data-review-filter="needs_review"
+        class="{% if active_review_view == 'needs_review' %}active{% endif %}"
+      >
+        To Review (<span data-review-count="needs_review">{{ review_counts.needs_review }}</span>)
+      </button>
+      <button
+        type="button"
+        data-review-filter="reviewed"
+        class="{% if active_review_view == 'reviewed' %}active{% endif %}"
+      >
+        Reviewed (<span data-review-count="reviewed">{{ review_counts.reviewed }}</span>)
+      </button>
+      <button
+        type="button"
+        data-review-filter="all"
+        class="{% if active_review_view == 'all' %}active{% endif %}"
+      >
+        All (<span data-review-count="all">{{ review_counts.all }}</span>)
+      </button>
+    </nav>
+    <div class="review-actions-row">
+      {% if extraction_status.openai_enabled %}
+        <button
+          type="button"
+          data-ai-second-pass-batch
+          data-ai-batch-has-run="{{ 'true' if ai_second_pass_has_run else 'false' }}"
+          {% if ai_batch_initial_summary.total_eligible == 0 %}disabled{% endif %}
+        >
+          Run AI Second-Pass
+        </button>
+      {% else %}
+        <button type="button" class="disabled-button" disabled title="OpenAI real mode is not configured">Run AI Second-Pass</button>
+      {% endif %}
+      <button type="button" data-start-guided-review>Start Review</button>
+    </div>
+    <p class="sop-inline-message" data-ai-batch-summary hidden></p>
+    <div class="review-filter-controls" data-reviewed-filter-controls hidden>
+      <div class="field">
+        <label for="reviewed-worker-filter">Worker</label>
+        <select id="reviewed-worker-filter" data-reviewed-worker-filter>
+          <option value="">All Workers</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="reviewed-date-filter">Date</label>
+        <select id="reviewed-date-filter" data-reviewed-date-filter>
+          <option value="">All Dates</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="reviewed-issue-filter">Issue Type</label>
+        <select id="reviewed-issue-filter" data-reviewed-issue-filter>
+          <option value="">All Issue Types</option>
+        </select>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="review-main-layout">
+
+  <section class="review-table-panel" aria-label="Review checklist">
+    <table class="review-checklist-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Worker</th>
+          <th>Date</th>
+          <th>Issue Type</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if not rows %}
+          <tr data-review-table-empty>
+            <td colspan="5">No rows in this view.</td>
+          </tr>
+        {% endif %}
+        {% for row in rows %}
+          <tr
+            data-review-table-row
+            data-row-id="{{ row.row_id }}"
+            data-review-status="{{ row.review_status }}"
+          >
+            <td data-table-status>{% if row.review_status == "reviewed" %}✓{% elif row.review_status == "clean" %}✓{% else %}☐{% endif %}</td>
+            <td data-table-worker>{{ row.worker or "Blank" }}</td>
+            <td data-table-date>{{ row.date or "Blank" }}</td>
+            <td data-table-issue>
+              {% set issue_label = row.review_reason or row.review_status %}
+              {% if issue_label == "unknown_code" %}
+                Unknown SOP Code
+              {% elif issue_label == "unclear_time" %}
+                Unclear Time
+              {% elif issue_label == "needs_review" %}
+                Needs Review
+              {% elif issue_label == "reviewed" %}
+                Reviewed
+              {% elif issue_label == "clean" %}
+                Clean
+              {% else %}
+                {{ issue_label|replace("_", " ")|title }}
+              {% endif %}
+            </td>
+            <td>
+              <button type="button" data-open-review-row>
+                {% if row.review_status == "reviewed" %}Open{% else %}Review{% endif %}
+              </button>
+              <button
+                type="button"
+                data-table-reopen-review
+                {% if row.review_status != "reviewed" %}hidden{% endif %}
+              >
+                Reopen
+              </button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="empty-state" data-review-table-empty-message hidden>No rows in this view.</p>
+    <p class="sop-inline-message" data-guided-queue-message hidden></p>
+  </section>
+
+  </div><!-- /.review-main-layout -->
+
+  <form
+    class="review-backing-form"
+    data-unsaved-warning
+    {% if session_id %}data-sop-add-endpoint="{{ url_for('session_add_unknown_sop_code_json', session_id=session_id) }}"{% endif %}
+    {% if session_id %}data-row-save-reviewed-endpoint="{{ url_for('session_save_review_row_as_reviewed', session_id=session_id) }}"{% endif %}
+    {% if session_id %}data-row-reopen-endpoint="{{ url_for('session_reopen_review_row', session_id=session_id) }}"{% endif %}
+    {% if session_id %}data-physical-card-crop-endpoint="{{ url_for('session_physical_card_crop', session_id=session_id) }}"{% endif %}
+    {% if session_id %}data-ai-recheck-row-endpoint="{{ url_for('session_ai_recheck_review_row', session_id=session_id) }}"{% endif %}
+    {% if session_id %}data-ai-recheck-batch-start-endpoint="{{ url_for('session_start_ai_recheck_review_batch', session_id=session_id) }}"{% endif %}
+    {% if session_id %}data-ai-recheck-batch-base-endpoint="{{ url_for('session_review', session_id=session_id) }}/ai-recheck-batch"{% endif %}
+    data-ai-second-pass-enabled="{{ 'true' if extraction_status.openai_enabled else 'false' }}"
+    method="post"
+    action="{% if session_id %}{{ url_for('session_save_review_rows', session_id=session_id) }}{% else %}/review{% endif %}"
+  >
+    <div class="review-card-grid">
+      {% if not rows %}
+        <p class="empty-state">No rows in this view.</p>
+      {% endif %}
+      <p class="empty-state" data-review-empty hidden>No rows in this view.</p>
+      {% for row in rows %}
+        <article
+          class="review-card {% if row.requires_attention %}attention-card{% endif %}"
+          data-review-card
+          data-row-id="{{ row.row_id }}"
+          data-review-status="{{ row.review_status }}"
+          data-ai-batch-status="{{ row.ai_batch_status or '' }}"
+        >
+          <input type="hidden" name="row_id" value="{{ row.row_id }}">
+          <input type="hidden" name="review_status" value="{{ row.review_status }}">
+          <input type="hidden" name="hr_decision" value="{{ row.hr_decision }}">
+          <input type="hidden" name="hr_correction_note" value="{{ row.hr_correction_note }}">
+          <input type="hidden" name="extraction_mode" value="{{ row.extraction_mode }}">
+          <input type="hidden" name="source_original_filename" value="{{ row.source_original_filename }}">
+          <input type="hidden" name="source_stored_filename" value="{{ row.source_stored_filename }}">
+          <input type="hidden" name="source_path" value="{{ row.source_path }}">
+          <input type="hidden" name="source_kind" value="{{ row.source_kind }}">
+          <input type="hidden" name="source_type" value="{{ row.source_type }}">
+          <input type="hidden" name="source_type_label" value="{{ row.source_type_label }}">
+          <input type="hidden" name="preprocessing_status" value="{{ row.preprocessing_status }}">
+          <input type="hidden" name="preprocessing_error" value="{{ row.preprocessing_error }}">
+          <input type="hidden" name="preprocessed_filename" value="{{ row.preprocessed_filename }}">
+          <input type="hidden" name="preprocessed_path" value="{{ row.preprocessed_path }}">
+          <input type="hidden" name="preprocessed_session_path" value="{{ row.preprocessed_session_path }}">
+          <input type="hidden" name="preprocessed_file_count" value="{{ row.preprocessed_file_count }}">
+          <input
+            type="hidden"
+            name="source_can_preview"
+            value="{{ 'true' if row.source_can_preview else 'false' }}"
+          >
+
+          <div class="review-card-meta">
+            <span>{{ row.source_original_filename or "No source file" }}</span>
+            <span>{{ row.source_type_label }}</span>
+          </div>
+
+          <div class="review-card-body">
+            <div class="source-panel">
+              {% if row.preprocessed_session_path %}
+                <div class="source-preview-box">
+                  <a
+                    class="source-preview-link"
+                    href="{{ url_for('session_serve_preprocessed_file', session_id=session_id, filename=row.preprocessed_filename) }}"
+                    target="_blank"
+                  >
+                    <img
+                      class="source-preview"
+                      src="{{ url_for('session_serve_preprocessed_file', session_id=session_id, filename=row.preprocessed_filename) }}"
+                      alt="{{ row.preprocessed_filename }}"
+                    >
+                  </a>
+                </div>
+                <span class="source-name">{{ row.source_original_filename }}</span>
+                <span class="source-type">Preprocessed File: {{ row.preprocessed_filename }}</span>
+                {% if row.preprocessed_file_count > 1 %}
+                  <span class="source-type">{{ row.preprocessed_file_count }} preprocessed pages available</span>
+                {% endif %}
+                <span class="source-type">Source Type: {{ row.source_type_label }}</span>
+              {% elif row.preprocessing_status == "failed" %}
+                <span class="source-placeholder">Preprocessing failed</span>
+                <span class="source-name">{{ row.source_original_filename }}</span>
+                <span class="source-type">Preprocessed File: Not available</span>
+                <span class="source-type">Warning: {{ row.preprocessing_error }}</span>
+                <span class="source-type">Source Type: {{ row.source_type_label }}</span>
+              {% elif row.source_stored_filename and row.source_can_preview %}
+                <div class="source-preview-box">
+                  <a
+                    class="source-preview-link"
+                    href="{% if session_id %}{{ url_for('session_serve_upload_file', session_id=session_id, filename=row.source_stored_filename) }}{% else %}{{ url_for('uploads', path=row.source_stored_filename) }}{% endif %}"
+                    target="_blank"
+                  >
+                    <img
+                      class="source-preview"
+                      src="{% if session_id %}{{ url_for('session_serve_upload_file', session_id=session_id, filename=row.source_stored_filename) }}{% else %}{{ url_for('uploads', path=row.source_stored_filename) }}{% endif %}"
+                      alt="{{ row.source_original_filename }}"
+                    >
+                  </a>
+                </div>
+                <span class="source-name">{{ row.source_original_filename }}</span>
+                <span class="source-type">Preprocessed File: Not available</span>
+                <span class="source-type">Source Type: {{ row.source_type_label }}</span>
+              {% elif row.source_stored_filename and row.source_kind == "pdf" %}
+                <a
+                  class="source-file-link"
+                  href="{% if session_id %}{{ url_for('session_serve_upload_file', session_id=session_id, filename=row.source_stored_filename) }}{% else %}{{ url_for('uploads', path=row.source_stored_filename) }}{% endif %}"
+                  target="_blank"
+                >
+                  PDF source
+                </a>
+                <span class="source-name">{{ row.source_original_filename }}</span>
+                <span class="source-type">Preprocessed File: Not available</span>
+                <span class="source-type">Source Type: {{ row.source_type_label }}</span>
+              {% elif row.source_stored_filename %}
+                <a
+                  class="source-file-link"
+                  href="{% if session_id %}{{ url_for('session_serve_upload_file', session_id=session_id, filename=row.source_stored_filename) }}{% else %}{{ url_for('uploads', path=row.source_stored_filename) }}{% endif %}"
+                  target="_blank"
+                >
+                  Source file
+                </a>
+                <span class="source-name">{{ row.source_original_filename }}</span>
+                <span class="source-type">Preprocessed File: Not available</span>
+                <span class="source-type">Source Type: {{ row.source_type_label }}</span>
+              {% else %}
+                <span class="source-placeholder">No source file</span>
+                <span class="source-type">Preprocessed File: Not available</span>
+                <span class="source-type">Source Type: {{ row.source_type_label }}</span>
+              {% endif %}
+            </div>
+
+            <div class="review-fields">
+              <div class="field">
+                <label for="worker-{{ loop.index0 }}">Worker</label>
+                <input id="worker-{{ loop.index0 }}" name="worker" type="text" value="{{ row.worker }}">
+              </div>
+              <div class="field">
+                <label for="date-{{ loop.index0 }}">Date</label>
+                <input id="date-{{ loop.index0 }}" name="date" type="date" value="{{ row.date }}">
+              </div>
+              <div class="field">
+                <label for="start-time-{{ loop.index0 }}">Start Time</label>
+                <input id="start-time-{{ loop.index0 }}" name="start_time" type="text" value="{{ row.start_time }}" placeholder="HH:MM">
+              </div>
+              <div class="field">
+                <label for="end-time-{{ loop.index0 }}">End Time</label>
+                <input id="end-time-{{ loop.index0 }}" name="end_time" type="text" value="{{ row.end_time }}" placeholder="HH:MM">
+              </div>
+              <div class="field">
+                <label for="hours-worked-{{ loop.index0 }}">Hours Worked</label>
+                <input id="hours-worked-{{ loop.index0 }}" name="hours_worked" type="text" value="{{ row.hours_worked }}">
+              </div>
+              <div class="field">
+                <label for="notes-{{ loop.index0 }}">Notes</label>
+                <input id="notes-{{ loop.index0 }}" name="notes" type="text" value="{{ row.notes }}">
+              </div>
+              <label class="checkbox-label attention-toggle">
+                <input
+                  name="requires_attention"
+                  type="checkbox"
+                  value="{{ loop.index0 }}"
+                  {% if row.requires_attention %}checked{% endif %}
+                >
+                Requires Attention
+              </label>
+              <div class="field full-field">
+                <label for="review-reason-{{ loop.index0 }}">Review Reason</label>
+                <input id="review-reason-{{ loop.index0 }}" name="review_reason" type="text" value="{{ row.review_reason }}">
+              </div>
+              {% if session_id and row.unknown_sop_code %}
+                <div
+                  class="field full-field row-sop-action"
+                  data-sop-add-control
+                  data-sop-code="{{ row.unknown_sop_code }}"
+                >
+                  <span class="status-label">Unknown SOP Code</span>
+                  <strong data-unknown-code-label>{{ row.unknown_sop_code }}</strong>
+                  <div class="inline-form">
+                    <div class="field">
+                      <label for="row-sop-code-{{ loop.index0 }}">Short Code <span class="field-hint">e.g. AL, MC, OFF — max 20 characters</span></label>
+                      <input id="row-sop-code-{{ loop.index0 }}" data-sop-code-input type="text" maxlength="20" placeholder="e.g. OFF" autocomplete="off">
+                    </div>
+                    <div class="field">
+                      <label for="row-sop-meaning-{{ loop.index0 }}">Meaning</label>
+                      <input id="row-sop-meaning-{{ loop.index0 }}" data-sop-meaning type="text" value="">
+                    </div>
+                    <label class="checkbox-label">
+                      <input data-sop-apply type="checkbox" value="true">
+                      Apply this SOP code to all matching review rows
+                    </label>
+                    <button type="button" data-sop-add-button>Add this code to SOP presets</button>
+                    <p class="sop-inline-message" data-sop-message hidden></p>
+                  </div>
+                </div>
+              {% endif %}
+              {% if session_id %}
+                <div class="field full-field row-review-actions">
+                  <p class="sop-inline-message" data-row-action-message hidden></p>
+                  <button
+                    type="button"
+                    data-save-reviewed-button
+                    {% if row.review_status == "reviewed" %}hidden{% endif %}
+                  >
+                    Save & Mark Reviewed
+                  </button>
+                  <button
+                    type="button"
+                    data-reopen-review-button
+                    {% if row.review_status != "reviewed" %}hidden{% endif %}
+                  >
+                    Reopen for Review
+                  </button>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="actions review-actions">
+      <button type="submit">Apply Review Changes</button>
+    </div>
+  </form>
+
+  {% if session_id %}
+    <div class="guided-review-modal" data-guided-review-modal hidden>
+      <div class="guided-review-panel" role="dialog" aria-modal="true" aria-labelledby="guided-review-title">
+        <button type="button" class="guided-review-close" data-guided-close aria-label="Close guided review">X</button>
+        <div class="guided-review-header">
+          <p class="eyebrow" data-guided-position>Review Item 0 of 0</p>
+          <h2 id="guided-review-title" data-guided-reviewing-title>Guided Review</h2>
+          <p class="description" data-guided-source-name></p>
+          <div class="guided-context">
+            <p><strong>Issue:</strong> <span data-guided-issue-label></span></p>
+            <p><strong>Action needed:</strong> <span data-guided-action-needed></span></p>
+          </div>
+          <p class="sop-inline-message" data-guided-missing-fields hidden></p>
+        </div>
+
+        <div class="guided-review-body">
+          <div class="guided-source-panel">
+            <div class="guided-crop-panel" data-guided-crop-panel>
+              <span class="status-label">Cropped Row Preview</span>
+              <strong data-guided-crop-target-label></strong>
+              <div class="source-preview-box" data-guided-crop-image-box hidden>
+                <img class="source-preview" data-guided-crop-image alt="Cropped row preview">
+              </div>
+              <p class="sop-inline-message" data-guided-crop-message>Crop preview not calibrated. Showing full image.</p>
+            </div>
+            <span class="status-label">Full Image Preview</span>
+            <div class="source-preview-box" data-guided-image-box style="overflow: auto;">
+              <button type="button" class="image-preview-button" data-guided-image-enlarge aria-label="Enlarge source image">
+                <img class="source-preview" data-guided-image alt="">
+              </button>
+            </div>
+            <a data-guided-open-image target="_blank" rel="noopener">Open full image in new tab</a>
+          </div>
+
+          <div class="guided-fields">
+            <div class="guided-summary">
+              <div class="guided-meta-pill">
+                <span>Worker:</span>
+                <strong data-guided-worker></strong>
+              </div>
+              <div class="guided-meta-pill">
+                <span>Date:</span>
+                <strong data-guided-date></strong>
+              </div>
+              <div class="guided-meta-pill">
+                <span>Card:</span>
+                <strong data-guided-card-number></strong>
+              </div>
+              <div class="guided-meta-pill">
+                <span>Source:</span>
+                <strong data-guided-source-type></strong>
+              </div>
+            </div>
+
+            <div class="guided-ai-values">
+              <h3>AI read</h3>
+              <div class="guided-ai-grid">
+                <div><span>Start:</span> <strong data-guided-ai-start></strong></div>
+                <div><span>End:</span> <strong data-guided-ai-end></strong></div>
+                <div><span>Hours:</span> <strong data-guided-ai-hours></strong></div>
+              </div>
+            </div>
+
+            <div class="review-fields guided-edit-fields">
+              <div class="field">
+                <label for="guided-start-time">Start Time</label>
+                <input id="guided-start-time" name="guided_start_time" type="text" data-guided-start-time placeholder="HH:MM">
+              </div>
+              <div class="field">
+                <label for="guided-end-time">End Time</label>
+                <input id="guided-end-time" name="guided_end_time" type="text" data-guided-end-time placeholder="HH:MM">
+              </div>
+              <div class="field">
+                <label for="guided-hours-worked">Hours Worked</label>
+                <input id="guided-hours-worked" name="guided_hours_worked" type="text" data-guided-hours-worked>
+              </div>
+              <div class="field full-field">
+                <label for="guided-notes">Notes</label>
+                <input id="guided-notes" name="guided_notes" type="text" data-guided-notes>
+              </div>
+              <div class="field full-field">
+                <label for="guided-correction-note">Additional Correction Note</label>
+                <input id="guided-correction-note" name="guided_correction_note" type="text" data-guided-correction-note>
+              </div>
+            </div>
+
+            <div class="guided-decision-actions">
+              <button type="button" data-guided-ai-recheck hidden>Ask AI to Recheck This Row</button>
+              <button type="button" data-guided-decision="confirmed">Confirm AI Value</button>
+              <button type="button" data-guided-skip>Skip for Later</button>
+              <button type="button" data-guided-save-next>Save & Next</button>
+            </div>
+            <div class="ai-second-pass-box" data-ai-second-pass-box hidden>
+              <h3>AI second-pass suggestion</h3>
+              <div class="guided-ai-grid">
+                <div><span>Start:</span> <strong data-ai-suggestion-start></strong></div>
+                <div><span>End:</span> <strong data-ai-suggestion-end></strong></div>
+                <div><span>Hours:</span> <strong data-ai-suggestion-hours></strong></div>
+              </div>
+              <p><strong>Confidence:</strong> <span data-ai-suggestion-confidence></span></p>
+              <p><strong>Reason:</strong> <span data-ai-suggestion-reason></span></p>
+              <div class="inline-form ai-second-pass-actions">
+                <button type="button" data-ai-suggestion-apply>Apply Suggestion</button>
+                <button type="button" class="secondary-button" data-ai-suggestion-reject>Reject Suggestion</button>
+              </div>
+            </div>
+            <p class="sop-inline-message" data-guided-message hidden></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="image-lightbox" data-image-lightbox hidden>
+      <div class="image-lightbox-panel" role="dialog" aria-modal="true" aria-label="Enlarged source image">
+        <button type="button" class="guided-review-close" data-image-lightbox-close aria-label="Close enlarged preview">X</button>
+        <div class="image-lightbox-toolbar">
+          <button type="button" data-lightbox-zoom-in>Zoom In</button>
+          <button type="button" data-lightbox-zoom-out>Zoom Out</button>
+          <button type="button" data-lightbox-zoom-reset>Reset Zoom</button>
+        </div>
+        <div class="image-lightbox-scroll">
+          <img data-image-lightbox-image alt="Enlarged source image">
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-batch-loading" data-ai-batch-loading hidden>
+      <div class="ai-batch-loading-panel" role="dialog" aria-modal="true" aria-live="polite" aria-label="AI second-pass running">
+        <button type="button" class="ai-batch-loading-close" data-ai-batch-cancel aria-label="Stop AI second-pass">X</button>
+        <div class="ai-batch-spinner" aria-hidden="true"></div>
+        <h2 data-ai-batch-loading-title>AI second-pass running...</h2>
+        <p data-ai-batch-loading-message>Analysing timesheet images...</p>
+        <div class="ai-batch-progress-grid" data-ai-batch-progress-grid>
+          <span>Status: <strong data-ai-batch-progress-status>running</strong></span>
+          <span><span data-ai-batch-total-label>Eligible</span>: <strong data-ai-batch-progress-total>0</strong></span>
+          <span>Processed: <strong data-ai-batch-progress-processed>0</strong></span>
+          <span><span data-ai-batch-confirmed-label>Auto-confirmed</span>: <strong data-ai-batch-progress-confirmed>0</strong></span>
+          <span><span data-ai-batch-filled-label>Auto-filled</span>: <strong data-ai-batch-progress-filled>0</strong></span>
+          <span>Failed: <strong data-ai-batch-progress-failed>0</strong></span>
+        </div>
+        <p class="ai-batch-loading-note" data-ai-batch-loading-note>Press X to stop after the current row finishes. No new rows will be started.</p>
+      </div>
+    </div>
+
+    <nav class="workflow-bottom-nav" aria-label="Workflow navigation">
+      <a class="button-link secondary-link" href="{{ url_for('session_upload', session_id=session_id) }}">Back</a>
+      <div class="continue-action">
+        {% if has_reviewed_rows %}
+          <a
+            class="button-link"
+            href="{{ url_for('session_export_excel', session_id=session_id) }}"
+            data-export-excel
+          >
+            Export Excel
+          </a>
+          <p class="continue-reason">Uses the saved reviewed rows for this session.</p>
+        {% else %}
+          <button type="button" class="disabled-button" disabled>Export Excel</button>
+          <p class="continue-reason">Apply review changes before exporting.</p>
+        {% endif %}
+        {% if review_counts and review_counts.needs_review > 0 %}
+          <p class="export-needs-review-warning">{{ review_counts.needs_review }} row{% if review_counts.needs_review != 1 %}s{% endif %} still need review</p>
+        {% endif %}
+      </div>
+    </nav>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', path='unsaved_warning.js') }}"></script>
+  <script>
+    (function () {
+      var endpointHolder = document.querySelector("[data-sop-add-endpoint]");
+      var rowEndpointHolder = document.querySelector("[data-row-save-reviewed-endpoint]");
+      var endpoint = endpointHolder ? endpointHolder.dataset.sopAddEndpoint : "";
+      var saveReviewedEndpoint = rowEndpointHolder ? rowEndpointHolder.dataset.rowSaveReviewedEndpoint : "";
+      var reopenEndpoint = rowEndpointHolder ? rowEndpointHolder.dataset.rowReopenEndpoint : "";
+      var physicalCardCropEndpoint = rowEndpointHolder ? rowEndpointHolder.dataset.physicalCardCropEndpoint : "";
+      var aiRecheckEndpoint = rowEndpointHolder ? rowEndpointHolder.dataset.aiRecheckRowEndpoint : "";
+      var aiBatchStartEndpoint = rowEndpointHolder ? rowEndpointHolder.dataset.aiRecheckBatchStartEndpoint : "";
+      var aiBatchBaseEndpoint = rowEndpointHolder ? rowEndpointHolder.dataset.aiRecheckBatchBaseEndpoint : "";
+      var aiSecondPassEnabled = rowEndpointHolder ? rowEndpointHolder.dataset.aiSecondPassEnabled === "true" : false;
+      var liveExtractionButton = document.querySelector("[data-live-extraction-batch]");
+      var liveExtractionStartEndpoint = liveExtractionButton ? liveExtractionButton.dataset.liveExtractionStartEndpoint : "";
+      var liveExtractionBaseEndpoint = liveExtractionButton ? liveExtractionButton.dataset.liveExtractionBaseEndpoint : "";
+      var activeReviewFilter = "{{ active_review_view }}";
+      var guidedProgressKey = "guided-review-progress-{{ session_id or 'default' }}";
+      var activeGuidedCard = null;
+      var activeGuidedDecision = "";
+      var activeGuidedConfirmAvailable = false;
+      var guidedInitialValues = {};
+      var lightboxZoom = 1;
+      var skippedRowIds = [];
+      var activeAiSuggestion = null;
+      var aiBatchLoadingTimer = null;
+      var aiBatchPollTimer = null;
+      var aiBatchRunning = false;
+      var aiBatchRunId = "";
+      var activeBatchKind = "";
+      var aiBatchLoadingMessages = [
+        "AI second-pass running...",
+        "Analysing timesheet images...",
+        "Checking unclear rows...",
+        "Applying high-confidence suggestions...",
+        "Saving audit trail..."
+      ];
+      var liveExtractionLoadingMessages = [
+        "Extraction running...",
+        "Analysing uploaded timesheets...",
+        "Reading preprocessed files...",
+        "Creating review rows...",
+        "Saving extracted rows..."
+      ];
+
+      function normalizeSopCode(value) {
+        var code = String(value || "")
+          .trim()
+          .replace(/\s+/g, " ");
+
+        code = code.replace(/^\s*(summary|detail)\s*:\s*/i, "");
+        code = code.replace(/\([^)]*month\s+seen[^)]*\)/ig, "");
+
+        code = code.split(";", 1)[0].trim().replace(/\s+/g, " ");
+        code = code.split("(", 1)[0].trim().replace(/\s+/g, " ");
+        code = code.replace(/\bmonth\s+seen\b.*$/i, "").trim().replace(/\s+/g, " ");
+
+        if (!code || code.toLocaleLowerCase().indexOf("month seen ") === 0) {
+          return "";
+        }
+
+        return code.toLocaleLowerCase();
+      }
+
+      function setMessage(target, text, isError) {
+        if (!target) {
+          return;
+        }
+
+        target.textContent = text;
+        target.hidden = false;
+        target.classList.toggle("error", Boolean(isError));
+        target.classList.toggle("success", !isError);
+      }
+
+      function splitReviewReasons(value) {
+        return String(value || "")
+          .split(/[;,]+/)
+          .map(function (reason) {
+            return reason.trim();
+          })
+          .filter(Boolean);
+      }
+
+      function hasUnknownCodeReason(value) {
+        return splitReviewReasons(value).indexOf("unknown_code") !== -1;
+      }
+
+      function removeUnknownCodeReason(value) {
+        return splitReviewReasons(value)
+          .filter(function (reason) {
+            return reason !== "unknown_code";
+          })
+          .join(", ");
+      }
+
+      function updateMatchingVisibleRows(normalizedCode) {
+        document.querySelectorAll("[data-review-card]").forEach(function (card) {
+          var notesInput = card.querySelector('input[name="notes"]');
+          var reasonInput = card.querySelector('input[name="review_reason"]');
+          var attentionInput = card.querySelector('input[name="requires_attention"]');
+          var rowSopAction = card.querySelector("[data-sop-add-control]");
+          var remainingReason = "";
+
+          if (!notesInput || !reasonInput || !hasUnknownCodeReason(reasonInput.value)) {
+            return;
+          }
+
+          if (normalizeSopCode(notesInput.value) !== normalizedCode) {
+            return;
+          }
+
+          remainingReason = removeUnknownCodeReason(reasonInput.value);
+          reasonInput.value = remainingReason;
+          reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+          if (attentionInput) {
+            attentionInput.checked = Boolean(remainingReason);
+            attentionInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+
+          if (rowSopAction) {
+            rowSopAction.hidden = true;
+          }
+
+          card.classList.toggle("attention-card", Boolean(remainingReason));
+        });
+      }
+
+      function removeGroupedControls(normalizedCode) {
+        document.querySelectorAll(".unknown-sop-list [data-sop-add-control]").forEach(function (control) {
+          if (normalizeSopCode(control.dataset.sopCode) === normalizedCode) {
+            control.remove();
+          }
+        });
+      }
+
+      function parseReviewTime(value) {
+        var match = String(value || "").trim().match(/^(\d|[01]\d|2[0-3]):([0-5]\d)$/);
+        if (!match) {
+          return null;
+        }
+
+        return Number(match[1]) * 60 + Number(match[2]);
+      }
+
+      function parseTargetDay(value) {
+        var text = String(value || "");
+        var isoMatch = text.match(/\b\d{4}[-/](\d{1,2})[-/](\d{1,2})\b/);
+        var match = null;
+        if (isoMatch) {
+          return Number(isoMatch[2]);
+        }
+        match = text.match(/(^|[^\d])([1-9]|[12][0-9]|3[01])($|[^\d])/);
+        return match ? Number(match[2]) : null;
+      }
+
+      function parseCardNumber(card) {
+        var notes = cardFieldValue(card, "notes");
+        var match = notes.match(/\bcard\s*([12])\b/i);
+        var day = parseTargetDay(cardFieldValue(card, "date"));
+        if (match) {
+          return match[1];
+        }
+        if (day) {
+          return day <= 15 ? "1" : "2";
+        }
+        return "";
+      }
+
+      function formatReviewDate(value) {
+        var text = String(value || "").trim();
+        var isoMatch = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        if (isoMatch) {
+          return Number(isoMatch[3]) + " " + monthNames[Number(isoMatch[2]) - 1] + " " + isoMatch[1];
+        }
+        return text || "Blank";
+      }
+
+      function formatIssueLabel(value) {
+        var reason = splitReviewReasons(value)[0] || "needs_review";
+        var labels = {
+          unclear_time: "Unclear time",
+          overwritten_or_cancelled: "Overwritten / cancelled stamp",
+          inferred_from_overlap: "Inferred from overlapping stamp",
+          blank_day: "Blank day",
+          unknown_code: "Unknown SOP code",
+          manually_reopened: "Manually reopened",
+          needs_review: "Needs review"
+        };
+
+        if (labels[reason]) {
+          return labels[reason];
+        }
+
+        return reason.replace(/_/g, " ").replace(/\b\w/g, function (letter) {
+          return letter.toLocaleUpperCase();
+        });
+      }
+
+      function formatDuration(minutes) {
+        var hours = Math.floor(minutes / 60);
+        var remainingMinutes = minutes % 60;
+        return hours + "h " + remainingMinutes + "m";
+      }
+
+      function updateCardHoursWorked(card) {
+        var startInput = card.querySelector('input[name="start_time"]');
+        var endInput = card.querySelector('input[name="end_time"]');
+        var hoursInput = card.querySelector('input[name="hours_worked"]');
+        var startMinutes = startInput ? parseReviewTime(startInput.value) : null;
+        var endMinutes = endInput ? parseReviewTime(endInput.value) : null;
+
+        if (!hoursInput) {
+          return;
+        }
+
+        if (startMinutes === null || endMinutes === null || endMinutes < startMinutes) {
+          hoursInput.value = "";
+          hoursInput.dispatchEvent(new Event("input", { bubbles: true }));
+          return;
+        }
+
+        hoursInput.value = formatDuration(endMinutes - startMinutes);
+        hoursInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      function updateGuidedHoursWorked() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var startInput = modal.querySelector("[data-guided-start-time]");
+        var endInput = modal.querySelector("[data-guided-end-time]");
+        var hoursInput = modal.querySelector("[data-guided-hours-worked]");
+        var startMinutes = parseReviewTime(startInput.value);
+        var endMinutes = parseReviewTime(endInput.value);
+
+        if (startMinutes === null || endMinutes === null || endMinutes < startMinutes) {
+          hoursInput.value = "";
+          return;
+        }
+
+        hoursInput.value = formatDuration(endMinutes - startMinutes);
+      }
+
+      function reviewReasonList(value) {
+        return splitReviewReasons(value).map(function (reason) {
+          return reason.toLocaleLowerCase();
+        });
+      }
+
+      function guidedInstructionForReason(reasonValue) {
+        var reasons = reviewReasonList(reasonValue);
+
+        if (reasons.indexOf("unclear_time") !== -1) {
+          return "AI could not read one or more time fields clearly. Please enter the correct time, then click Save & Next.";
+        }
+        if (reasons.indexOf("overwritten_or_cancelled") !== -1) {
+          return "AI detected overwritten or double-stamped time. Please verify the time fields before saving.";
+        }
+        if (reasons.indexOf("inferred_from_overlap") !== -1) {
+          return "AI inferred a time from an overlapping stamp. Please confirm or correct it before saving.";
+        }
+        if (reasons.indexOf("blank_day") !== -1) {
+          return "This day appears blank. Please confirm if it should remain blank or add the correct note/time.";
+        }
+        if (reasons.indexOf("unknown_code") !== -1) {
+          return "AI detected a note/code that is not in SOP presets. Please confirm or add it to SOP.";
+        }
+
+        return "Please verify this review item, correct any fields if needed, then click Save & Next.";
+      }
+
+      function guidedActionNeeded(card) {
+        var reason = cardFieldValue(card, "review_reason");
+        var reasons = reviewReasonList(reason);
+        var startValue = cardFieldValue(card, "start_time");
+        var endValue = cardFieldValue(card, "end_time");
+        var missing = guidedMissingFields(
+          startValue,
+          endValue,
+          cardFieldValue(card, "hours_worked"),
+          cardFieldValue(card, "notes"),
+          reason
+        );
+
+        if (missing.length) {
+          return "Enter missing " + missing.join(", ") + ".";
+        }
+        if (reasons.indexOf("overwritten_or_cancelled") !== -1) {
+          return "Verify the overwritten or double-stamped time.";
+        }
+        if (reasons.indexOf("inferred_from_overlap") !== -1) {
+          return "Confirm or correct the inferred overlapping stamp time.";
+        }
+        if (reasons.indexOf("unknown_code") !== -1) {
+          return "Confirm the note or add it to SOP presets.";
+        }
+        if (reasons.indexOf("blank_day") !== -1) {
+          return "Confirm this day should remain blank or enter the correct value.";
+        }
+        return "Verify the row, then save.";
+      }
+
+      function isBlankOrPlaceholder(value) {
+        var text = String(value || "").trim();
+        return !text || text.toLocaleUpperCase() === "HH:MM";
+      }
+
+      function guidedMissingFields(startValue, endValue, hoursValue, notesValue, reasonValue) {
+        var reasons = reviewReasonList(reasonValue);
+        var missing = [];
+        var startMinutes = parseReviewTime(startValue);
+        var endMinutes = parseReviewTime(endValue);
+        var needsTimeCheck = reasons.some(function (reason) {
+          return ["unclear_time", "overwritten_or_cancelled", "inferred_from_overlap", "date_mapping_unclear"].indexOf(reason) !== -1;
+        }) || Boolean(startValue || endValue);
+
+        if (needsTimeCheck) {
+          if (startMinutes === null) {
+            missing.push("Start Time");
+          }
+          if (endMinutes === null) {
+            missing.push("End Time");
+          }
+          if (startMinutes !== null && endMinutes !== null && endMinutes < startMinutes) {
+            missing.push("Valid time range");
+          }
+          if (startMinutes !== null && endMinutes !== null && endMinutes >= startMinutes && isBlankOrPlaceholder(hoursValue)) {
+            missing.push("Hours Worked");
+          }
+        }
+
+        if (reasons.indexOf("unknown_code") !== -1 && isBlankOrPlaceholder(notesValue)) {
+          missing.push("Notes");
+        }
+
+        return missing;
+      }
+
+      function guidedConfirmDecision(startValue, endValue, hoursValue, notesValue, reasonValue, sourceType) {
+        var reasons = reviewReasonList(reasonValue);
+        var startMinutes = parseReviewTime(startValue);
+        var endMinutes = parseReviewTime(endValue);
+        var hasTimeValues = !isBlankOrPlaceholder(startValue) || !isBlankOrPlaceholder(endValue) || !isBlankOrPlaceholder(hoursValue);
+        var timeBasedRow = sourceType === "physical_time_card" || hasTimeValues || reasons.indexOf("unclear_time") !== -1;
+
+        if (reasons.indexOf("blank_day") !== -1) {
+          return { available: false, reason: "blank_day" };
+        }
+        if (timeBasedRow) {
+          if (startMinutes === null) {
+            return { available: false, reason: "missing_or_invalid_start_time" };
+          }
+          if (endMinutes === null) {
+            return { available: false, reason: "missing_or_invalid_end_time" };
+          }
+          if (endMinutes <= startMinutes) {
+            return { available: false, reason: "invalid_time_range" };
+          }
+          if (reasons.indexOf("unclear_time") !== -1 && (isBlankOrPlaceholder(startValue) || isBlankOrPlaceholder(endValue))) {
+            return { available: false, reason: "unclear_time_missing_time" };
+          }
+          if (isBlankOrPlaceholder(hoursValue)) {
+            return { available: false, reason: "missing_hours_worked" };
+          }
+          return { available: true, reason: "complete_time_values" };
+        }
+        if (isBlankOrPlaceholder(notesValue)) {
+          return { available: false, reason: "missing_notes" };
+        }
+
+        return { available: true, reason: "complete_non_time_values" };
+      }
+
+      function resetGuidedCropPreview() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var cropImageBox = modal.querySelector("[data-guided-crop-image-box]");
+        var cropImage = modal.querySelector("[data-guided-crop-image]");
+        var cropMessage = modal.querySelector("[data-guided-crop-message]");
+        var cropTargetLabel = modal.querySelector("[data-guided-crop-target-label]");
+
+        if (cropImageBox) {
+          cropImageBox.hidden = true;
+        }
+        if (cropImage) {
+          cropImage.hidden = true;
+          cropImage.removeAttribute("src");
+        }
+        if (cropMessage) {
+          cropMessage.textContent = "Crop preview not calibrated. Showing full image.";
+          cropMessage.hidden = false;
+        }
+        if (cropTargetLabel) {
+          cropTargetLabel.textContent = "";
+        }
+      }
+
+      function updateGuidedCropPreview(card) {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var cropImageBox = modal.querySelector("[data-guided-crop-image-box]");
+        var cropImage = modal.querySelector("[data-guided-crop-image]");
+        var cropMessage = modal.querySelector("[data-guided-crop-message]");
+        var cropTargetLabel = modal.querySelector("[data-guided-crop-target-label]");
+        var sourceType = cardFieldValue(card, "source_type");
+        var imagePath = cardFieldValue(card, "preprocessed_session_path");
+        var dateValue = cardFieldValue(card, "date");
+        var day = parseTargetDay(dateValue);
+        var cardNumber = parseCardNumber(card);
+        var cropUrl = "";
+
+        resetGuidedCropPreview();
+        if (cropTargetLabel && day) {
+          cropTargetLabel.textContent = "Inspect: Day " + day + " / " + formatReviewDate(dateValue);
+        }
+        if (sourceType !== "physical_time_card" || !physicalCardCropEndpoint || !imagePath || !dateValue || !day) {
+          return;
+        }
+
+        cropUrl = physicalCardCropEndpoint
+          + "?image_path=" + encodeURIComponent(imagePath)
+          + "&date_value=" + encodeURIComponent(dateValue)
+          + "&card_number=" + encodeURIComponent(cardNumber || "")
+          + "&source_type=" + encodeURIComponent(sourceType);
+
+        fetch(cropUrl, { credentials: "same-origin" })
+          .then(function (response) {
+            var contentType = response.headers.get("content-type") || "";
+            if (!response.ok || contentType.indexOf("image/") !== 0) {
+              return response.json().catch(function () {
+                return { message: "Crop preview not calibrated. Showing full image." };
+              }).then(function (payload) {
+                throw new Error(payload.message || "Crop preview not calibrated. Showing full image.");
+              });
+            }
+            return response.blob();
+          })
+          .then(function (blob) {
+            if (!cropImage || !cropImageBox || !cropMessage) {
+              return;
+            }
+            cropImage.src = URL.createObjectURL(blob);
+            cropImage.hidden = false;
+            cropImageBox.hidden = false;
+            cropMessage.hidden = true;
+          })
+          .catch(function (error) {
+            if (cropMessage) {
+              cropMessage.textContent = error.message || "Crop preview not calibrated. Showing full image.";
+              cropMessage.hidden = false;
+            }
+          });
+      }
+
+      function guidedCurrentValues() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        return {
+          start_time: modal.querySelector("[data-guided-start-time]").value,
+          end_time: modal.querySelector("[data-guided-end-time]").value,
+          hours_worked: modal.querySelector("[data-guided-hours-worked]").value,
+          notes: modal.querySelector("[data-guided-notes]").value,
+          hr_correction_note: modal.querySelector("[data-guided-correction-note]").value
+        };
+      }
+
+      function guidedValuesChanged() {
+        var current = guidedCurrentValues();
+        return Object.keys(current).some(function (key) {
+          return current[key] !== (guidedInitialValues[key] || "");
+        });
+      }
+
+      function updateGuidedConfirmVisibility() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var confirmButton = modal.querySelector('[data-guided-decision="confirmed"]');
+        var missingTarget = modal.querySelector("[data-guided-missing-fields]");
+        var reason = activeGuidedCard ? cardFieldValue(activeGuidedCard, "review_reason") : "";
+        var sourceType = activeGuidedCard ? cardFieldValue(activeGuidedCard, "source_type") : "";
+        var values = guidedCurrentValues();
+        var missing = guidedMissingFields(values.start_time, values.end_time, values.hours_worked, values.notes, reason);
+        var decision = guidedConfirmDecision(values.start_time, values.end_time, values.hours_worked, values.notes, reason, sourceType);
+
+        activeGuidedConfirmAvailable = false;
+        if (decision.available && !guidedValuesChanged()) {
+          activeGuidedConfirmAvailable = true;
+        } else if (decision.available && guidedValuesChanged()) {
+          decision.reason = "values_changed_use_save_next";
+        }
+        if (confirmButton) {
+          confirmButton.hidden = !activeGuidedConfirmAvailable;
+          confirmButton.classList.remove("active");
+        }
+        if (activeGuidedDecision === "confirmed" && !activeGuidedConfirmAvailable) {
+          activeGuidedDecision = "";
+        }
+        if (missingTarget) {
+          missingTarget.hidden = missing.length === 0;
+          missingTarget.textContent = missing.length ? "Missing field: " + missing.join(", ") : "";
+        }
+      }
+
+      function resetAiSecondPassBox() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var box = modal ? modal.querySelector("[data-ai-second-pass-box]") : null;
+        activeAiSuggestion = null;
+        if (box) {
+          box.hidden = true;
+        }
+      }
+
+      function rowHasPreprocessedImage(card) {
+        return Boolean(cardFieldValue(card, "preprocessed_session_path"));
+      }
+
+      function rowRequiresReview(card) {
+        var reason = cardFieldValue(card, "review_reason");
+        var attentionInput = card.querySelector('input[name="requires_attention"]');
+        return Boolean(reason.trim()) || Boolean(attentionInput && attentionInput.checked);
+      }
+
+      function updateAiRecheckButton() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var button = modal ? modal.querySelector("[data-guided-ai-recheck]") : null;
+        if (!button) {
+          return;
+        }
+        button.hidden = !(
+          aiSecondPassEnabled
+          && aiRecheckEndpoint
+          && activeGuidedCard
+          && rowHasPreprocessedImage(activeGuidedCard)
+          && rowRequiresReview(activeGuidedCard)
+        );
+      }
+
+      function renderAiSecondPassSuggestion(result, message) {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var box = modal.querySelector("[data-ai-second-pass-box]");
+        var fields = result.fields_to_update || {};
+        var confidence = Math.round((Number(result.confidence || 0) || 0) * 100);
+        var actionButtons = box.querySelector(".ai-second-pass-actions");
+
+        activeAiSuggestion = result;
+        box.querySelector("[data-ai-suggestion-start]").textContent = fields.start_time || result.suggested_start_time || "blank";
+        box.querySelector("[data-ai-suggestion-end]").textContent = fields.end_time || result.suggested_end_time || "blank";
+        box.querySelector("[data-ai-suggestion-hours]").textContent = fields.hours_worked || result.suggested_hours_worked || "blank";
+        box.querySelector("[data-ai-suggestion-confidence]").textContent = confidence + "%";
+        box.querySelector("[data-ai-suggestion-reason]").textContent = result.reason || "No reason returned.";
+        if (actionButtons) {
+          actionButtons.hidden = result.recommendation === "no_suggestion" || result.recommendation === "auto_confirm";
+        }
+        box.hidden = false;
+        if (message) {
+          setMessage(modal.querySelector("[data-guided-message]"), message, false);
+        }
+      }
+
+      function applyAiFieldsToModal(fields) {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        if (!fields || !modal) {
+          return;
+        }
+        [
+          ["start_time", "[data-guided-start-time]"],
+          ["end_time", "[data-guided-end-time]"],
+          ["hours_worked", "[data-guided-hours-worked]"],
+          ["notes", "[data-guided-notes]"]
+        ].forEach(function (pair) {
+          var value = fields[pair[0]];
+          var input = modal.querySelector(pair[1]);
+          if (input && value) {
+            input.value = value;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+        updateGuidedHoursWorked();
+        updateGuidedConfirmVisibility();
+      }
+
+      function applyAiSuggestionToModal() {
+        if (!activeAiSuggestion) {
+          return;
+        }
+        applyAiFieldsToModal(activeAiSuggestion.fields_to_update || {});
+        activeGuidedDecision = "ai_suggestion_applied";
+        setMessage(document.querySelector("[data-guided-message]"), "AI suggestion applied. Review the values, then click Save & Next.", false);
+      }
+
+      function markCardAiAutoConfirmed(card, payload) {
+        var updated = payload.updated_fields || {};
+        var reasonInput = card.querySelector('input[name="review_reason"]');
+        var attentionInput = card.querySelector('input[name="requires_attention"]');
+
+        ["start_time", "end_time", "hours_worked", "notes"].forEach(function (fieldName) {
+          if (updated[fieldName]) {
+            setHiddenCardField(card, fieldName, updated[fieldName]);
+          }
+        });
+        if (reasonInput) {
+          reasonInput.value = "";
+        }
+        if (attentionInput) {
+          attentionInput.checked = false;
+        }
+        setHiddenCardField(card, "hr_decision", "ai_auto_confirmed");
+        setCardReviewStatus(card, "reviewed");
+        card.classList.remove("attention-card");
+        syncReviewTableRow(card);
+        updateReviewCounts();
+        updateGuidedLaunchState();
+        applyReviewFilter(activeReviewFilter);
+      }
+
+      function applyAiBatchProcessedRow(rowPayload) {
+        var card = cardForRowId(rowPayload.row_id || "");
+        var aiResult = rowPayload.result || {};
+        var fields = aiResult.fields_to_update || {};
+        var audit = rowPayload.audit || {};
+        if (!card) {
+          return;
+        }
+
+        if (audit.ai_batch_status) {
+          card.dataset.aiBatchStatus = audit.ai_batch_status;
+        }
+
+        if (aiResult.recommendation === "auto_confirm" && rowPayload.auto_confirmed) {
+          markCardAiAutoConfirmed(card, rowPayload);
+          return;
+        }
+
+        if (aiResult.recommendation === "auto_fill") {
+          ["start_time", "end_time", "hours_worked", "notes"].forEach(function (fieldName) {
+            if (fields[fieldName]) {
+              setHiddenCardField(card, fieldName, fields[fieldName]);
+            }
+          });
+          syncReviewTableRow(card);
+        }
+      }
+
+      function formatAiBatchSummary(summary) {
+        return [
+          "AI second-pass batch complete.",
+          "Eligible: " + (summary.total_eligible || 0),
+          "Considered: " + (summary.considered || 0),
+          "Processed: " + (summary.processed || 0),
+          "Auto-confirmed: " + (summary.auto_confirmed || 0),
+          "Auto-filled: " + (summary.auto_filled || 0),
+          "Suggestions only: " + (summary.suggestions_only || 0),
+          "No suggestion: " + (summary.no_suggestion || 0),
+          "Skipped: " + (summary.skipped || 0),
+          "Failed: " + (summary.failed || 0),
+          "Cancelled: " + (summary.cancelled || 0)
+        ].join(" | ");
+      }
+
+      function batchStatusUrl(batchRunId) {
+        return aiBatchBaseEndpoint + "/" + encodeURIComponent(batchRunId) + "/status";
+      }
+
+      function batchCancelUrl(batchRunId) {
+        return aiBatchBaseEndpoint + "/" + encodeURIComponent(batchRunId) + "/cancel";
+      }
+
+      function liveExtractionStatusUrl(batchRunId) {
+        return liveExtractionBaseEndpoint + "/" + encodeURIComponent(batchRunId) + "/status";
+      }
+
+      function liveExtractionCancelUrl(batchRunId) {
+        return liveExtractionBaseEndpoint + "/" + encodeURIComponent(batchRunId) + "/cancel";
+      }
+
+      function updateAiBatchProgress(status, summary, kind) {
+        var statusTarget = document.querySelector("[data-ai-batch-progress-status]");
+        var totalTarget = document.querySelector("[data-ai-batch-progress-total]");
+        var processedTarget = document.querySelector("[data-ai-batch-progress-processed]");
+        var confirmedTarget = document.querySelector("[data-ai-batch-progress-confirmed]");
+        var filledTarget = document.querySelector("[data-ai-batch-progress-filled]");
+        var failedTarget = document.querySelector("[data-ai-batch-progress-failed]");
+        var totalLabel = document.querySelector("[data-ai-batch-total-label]");
+        var confirmedLabel = document.querySelector("[data-ai-batch-confirmed-label]");
+        var filledLabel = document.querySelector("[data-ai-batch-filled-label]");
+        var statusLabel = document.querySelector("[data-ai-batch-status-label]");
+        summary = summary || {};
+        kind = kind || activeBatchKind || "ai-second-pass";
+
+        if (totalLabel) {
+          totalLabel.textContent = kind === "live-extraction" ? "Files" : "Eligible";
+        }
+        if (confirmedLabel) {
+          confirmedLabel.textContent = kind === "live-extraction" ? "Succeeded" : "Auto-confirmed";
+        }
+        if (filledLabel) {
+          filledLabel.textContent = kind === "live-extraction" ? "Skipped" : "Auto-filled";
+        }
+
+        if (statusTarget) {
+          statusTarget.textContent = status || "running";
+        }
+        if (totalTarget) {
+          totalTarget.textContent = kind === "live-extraction" ? (summary.total_files || 0) : (summary.total_eligible || 0);
+        }
+        if (processedTarget) {
+          processedTarget.textContent = summary.processed || 0;
+        }
+        if (confirmedTarget) {
+          confirmedTarget.textContent = kind === "live-extraction" ? (summary.succeeded || 0) : (summary.auto_confirmed || 0);
+        }
+        if (filledTarget) {
+          filledTarget.textContent = kind === "live-extraction" ? (summary.skipped || 0) : (summary.auto_filled || 0);
+        }
+        if (failedTarget) {
+          failedTarget.textContent = summary.failed || 0;
+        }
+        if (statusLabel) {
+          if (kind === "live-extraction" && status === "cancelled") {
+            statusLabel.textContent = "Extraction partially completed / cancelled.";
+          } else if (kind === "live-extraction" && status === "completed") {
+            statusLabel.textContent = "Extraction completed.";
+          } else if (kind === "live-extraction" && status === "failed") {
+            statusLabel.textContent = "Extraction failed.";
+          } else if (kind === "live-extraction" && status === "cancelling") {
+            statusLabel.textContent = "Stopping after current file...";
+          } else if (kind === "live-extraction") {
+            statusLabel.textContent = "Extraction running...";
+          } else if (status === "cancelled") {
+            statusLabel.textContent = "AI second-pass partially completed / cancelled.";
+          } else if (status === "completed") {
+            statusLabel.textContent = "AI second-pass completed.";
+          } else if (status === "failed") {
+            statusLabel.textContent = "AI second-pass failed.";
+          } else if (status === "cancelling") {
+            statusLabel.textContent = "Stopping after current row...";
+          } else {
+            statusLabel.textContent = "AI second-pass running...";
+          }
+        }
+      }
+
+      function eligibleAiBatchCards() {
+        return Array.prototype.slice.call(document.querySelectorAll("[data-review-card]")).filter(function (card) {
+          var reason = cardFieldValue(card, "review_reason");
+          var reasons = reviewReasonList(reason);
+          var worker = cardFieldValue(card, "worker");
+          var dateValue = cardFieldValue(card, "date");
+          var unresolved = cardMatchesReviewFilter(card, "needs_review");
+
+          if (!unresolved || !cardFieldValue(card, "preprocessed_session_path")) {
+            return false;
+          }
+          if (reasons.indexOf("month_mismatch") !== -1 || reasons.indexOf("irrelevant_file") !== -1) {
+            return false;
+          }
+          if (reasons.indexOf("date_mapping_unclear") !== -1 && !worker && !dateValue) {
+            return false;
+          }
+          return true;
+        });
+      }
+
+      function updateAiBatchRunAvailability() {
+        var batchButton = document.querySelector("[data-ai-second-pass-batch]");
+        var message = document.querySelector("[data-ai-batch-eligible-message]");
+        var eligibleCount = eligibleAiBatchCards().length;
+        if (batchButton && !aiBatchRunning) {
+          batchButton.disabled = eligibleCount === 0;
+        }
+        if (message) {
+          message.textContent = eligibleCount === 0
+            ? "No eligible rows need AI second-pass."
+            : eligibleCount + " eligible row" + (eligibleCount === 1 ? "" : "s") + " can be checked.";
+        }
+      }
+
+      function setAiBatchControlsDisabled(disabled) {
+        var startButton = document.querySelector("[data-start-guided-review]");
+        var batchButton = document.querySelector("[data-ai-second-pass-batch]");
+        var extractionButton = document.querySelector("[data-live-extraction-batch]");
+        if (startButton) {
+          startButton.disabled = disabled;
+        }
+        if (batchButton) {
+          batchButton.disabled = disabled || eligibleAiBatchCards().length === 0;
+        }
+        if (extractionButton) {
+          extractionButton.disabled = disabled;
+        }
+      }
+
+      function showAiBatchLoading(kind) {
+        var overlay = document.querySelector("[data-ai-batch-loading]");
+        var title = document.querySelector("[data-ai-batch-loading-title]");
+        var message = document.querySelector("[data-ai-batch-loading-message]");
+        var note = document.querySelector("[data-ai-batch-loading-note]");
+        var closeButton = document.querySelector("[data-ai-batch-cancel]");
+        var index = 0;
+        var messages = kind === "live-extraction" ? liveExtractionLoadingMessages : aiBatchLoadingMessages;
+
+        activeBatchKind = kind || "ai-second-pass";
+        aiBatchRunning = true;
+        setAiBatchControlsDisabled(true);
+        if (!overlay || !title || !message) {
+          return;
+        }
+
+        title.textContent = messages[0];
+        message.textContent = messages[1];
+        if (note) {
+          note.textContent = kind === "live-extraction"
+            ? "Press X to stop after the current file finishes. No new files will be started."
+            : "Press X to stop after the current row finishes. No new rows will be started.";
+        }
+        if (closeButton) {
+          closeButton.setAttribute("aria-label", kind === "live-extraction" ? "Stop extraction" : "Stop AI second-pass");
+        }
+        updateAiBatchProgress("running", {}, activeBatchKind);
+        overlay.hidden = false;
+        window.clearInterval(aiBatchLoadingTimer);
+        aiBatchLoadingTimer = window.setInterval(function () {
+          index = (index + 1) % messages.length;
+          title.textContent = messages[index];
+          message.textContent = messages[(index + 1) % messages.length];
+        }, 2200);
+      }
+
+      function hideAiBatchLoading() {
+        var overlay = document.querySelector("[data-ai-batch-loading]");
+        var closeButton = document.querySelector("[data-ai-batch-cancel]");
+        window.clearInterval(aiBatchLoadingTimer);
+        window.clearInterval(aiBatchPollTimer);
+        aiBatchLoadingTimer = null;
+        aiBatchPollTimer = null;
+        aiBatchRunning = false;
+        aiBatchRunId = "";
+        activeBatchKind = "";
+        setAiBatchControlsDisabled(false);
+        if (closeButton) {
+          closeButton.disabled = false;
+        }
+        if (overlay) {
+          overlay.hidden = true;
+        }
+      }
+
+      function setBatchCancellingDisplay() {
+        var title = document.querySelector("[data-ai-batch-loading-title]");
+        var message = document.querySelector("[data-ai-batch-loading-message]");
+        var note = document.querySelector("[data-ai-batch-loading-note]");
+        var closeButton = document.querySelector("[data-ai-batch-cancel]");
+
+        window.clearInterval(aiBatchLoadingTimer);
+        aiBatchLoadingTimer = null;
+        if (title) {
+          title.textContent = "Fixing last row, cancelling request...";
+        }
+        if (message) {
+          message.textContent = "The current OpenAI check may finish first. No new files or rows will be started.";
+        }
+        if (note) {
+          note.textContent = "Already processed results will stay saved.";
+        }
+        if (closeButton) {
+          closeButton.disabled = true;
+        }
+      }
+
+      function cancelAiBatchLoading() {
+        var summaryTarget = document.querySelector("[data-ai-batch-summary]");
+        var liveSummaryTarget = document.querySelector("[data-live-extraction-summary]");
+        var isLiveExtraction = activeBatchKind === "live-extraction";
+        var target = isLiveExtraction ? liveSummaryTarget : summaryTarget;
+        var confirmMessage = isLiveExtraction
+          ? "Stop extraction after the current file? The file currently being extracted may finish, but no new files will be started."
+          : "Stop AI second-pass after the current row? The row currently being checked may finish, but no new rows will be started.";
+        if (!aiBatchRunning) {
+          return;
+        }
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+        setBatchCancellingDisplay();
+        setMessage(target, isLiveExtraction ? "Stopping extraction after the current file..." : "Stopping AI second-pass after the current row...", false);
+        updateAiBatchProgress("cancelling", {}, activeBatchKind);
+        if (!aiBatchRunId) {
+          setMessage(target, "Could not identify the active batch.", true);
+          return;
+        }
+        fetch(isLiveExtraction ? liveExtractionCancelUrl(aiBatchRunId) : batchCancelUrl(aiBatchRunId), {
+          method: "POST",
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            if (!result.ok || !result.payload.success) {
+              setMessage(target, result.payload.message || "Could not stop the batch.", true);
+              return;
+            }
+            setMessage(target, isLiveExtraction ? "Stopping after current file..." : "Stopping after current row...", false);
+          })
+          .catch(function () {
+            setMessage(target, "Could not send the stop request. The batch may continue.", true);
+          });
+      }
+
+      function finishAiBatchFromStatus(payload) {
+        var summaryTarget = document.querySelector("[data-ai-batch-summary]");
+        (payload.rows || []).forEach(function (rowPayload) {
+          if (rowPayload.status === "processed") {
+            applyAiBatchProcessedRow(rowPayload);
+          }
+        });
+        updateReviewCounts();
+        updateGuidedLaunchState();
+        applyReviewFilter(activeReviewFilter);
+        setMessage(summaryTarget, formatAiBatchSummary(payload.summary || {}), payload.status === "failed");
+        updateAiBatchRunAvailability();
+        hideAiBatchLoading();
+      }
+
+      function formatLiveExtractionSummary(summary) {
+        return [
+          "Extraction batch " + ((summary.cancelled || 0) ? "cancelled" : "complete") + ".",
+          "Files: " + (summary.total_files || 0),
+          "Processed: " + (summary.processed || 0),
+          "Succeeded: " + (summary.succeeded || 0),
+          "Skipped: " + (summary.skipped || 0),
+          "Failed: " + (summary.failed || 0),
+          "Cancelled: " + (summary.cancelled || 0)
+        ].join(" | ");
+      }
+
+      function finishLiveExtractionFromStatus(payload) {
+        var summaryTarget = document.querySelector("[data-live-extraction-summary]");
+        setMessage(summaryTarget, formatLiveExtractionSummary(payload.summary || {}) + " Reloading review rows...", payload.status === "failed");
+        window.__timesheetSkipUnsavedWarning = true;
+        try {
+          window.sessionStorage.setItem("timesheet-skip-unsaved-warning-once", "true");
+        } catch (error) {
+          // Ignore storage failures; the in-memory flag still covers normal browsers.
+        }
+        hideAiBatchLoading();
+        window.location.reload();
+      }
+
+      function pollAiBatchStatus(batchRunId) {
+        fetch(batchStatusUrl(batchRunId), { credentials: "same-origin" })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            if (!result.ok || !payload.success) {
+              setMessage(document.querySelector("[data-ai-batch-summary]"), payload.message || "Could not read AI second-pass progress.", true);
+              hideAiBatchLoading();
+              return;
+            }
+            updateAiBatchProgress(payload.status, payload.summary || {});
+            (payload.rows || []).forEach(function (rowPayload) {
+              if (rowPayload.status === "processed") {
+                applyAiBatchProcessedRow(rowPayload);
+              }
+            });
+            updateReviewCounts();
+            applyReviewFilter(activeReviewFilter);
+            if (["completed", "cancelled", "failed"].indexOf(payload.status) !== -1) {
+              finishAiBatchFromStatus(payload);
+            }
+          })
+          .catch(function () {
+            setMessage(document.querySelector("[data-ai-batch-summary]"), "Could not read AI second-pass progress.", true);
+            hideAiBatchLoading();
+          });
+      }
+
+      function pollLiveExtractionStatus(batchRunId) {
+        fetch(liveExtractionStatusUrl(batchRunId), { credentials: "same-origin" })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            if (!result.ok || !payload.success) {
+              setMessage(document.querySelector("[data-live-extraction-summary]"), payload.message || "Could not read extraction progress.", true);
+              hideAiBatchLoading();
+              return;
+            }
+            updateAiBatchProgress(payload.status, payload.summary || {}, "live-extraction");
+            if (["completed", "cancelled", "failed"].indexOf(payload.status) !== -1) {
+              finishLiveExtractionFromStatus(payload);
+            }
+          })
+          .catch(function () {
+            setMessage(document.querySelector("[data-live-extraction-summary]"), "Could not read extraction progress.", true);
+            hideAiBatchLoading();
+          });
+      }
+
+      function runAiSecondPassBatch(button) {
+        var summaryTarget = document.querySelector("[data-ai-batch-summary]");
+        if (aiBatchRunning) {
+          return;
+        }
+        if (!aiBatchStartEndpoint) {
+          return;
+        }
+        if (eligibleAiBatchCards().length === 0) {
+          setMessage(summaryTarget, "No eligible rows need AI second-pass.", false);
+          updateAiBatchRunAvailability();
+          return;
+        }
+        if (button.dataset.aiBatchHasRun === "true" && !window.confirm("AI second-pass has already run for this session. Run again only for remaining unresolved rows?")) {
+          return;
+        }
+        if (!window.confirm("Run AI second-pass on all eligible unresolved rows? This will use API credits.")) {
+          return;
+        }
+
+        showAiBatchLoading("ai-second-pass");
+        setMessage(summaryTarget, "AI second-pass batch is running. This may take a while...", false);
+        fetch(aiBatchStartEndpoint, {
+          method: "POST",
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            if (!result.ok || !payload.success) {
+              setMessage(summaryTarget, payload.message || "AI second-pass batch failed.", true);
+              hideAiBatchLoading();
+              return;
+            }
+            aiBatchRunId = payload.batch_run_id || "";
+            button.dataset.aiBatchHasRun = "true";
+            updateAiBatchProgress(payload.status || "queued", payload.summary || {});
+            window.clearInterval(aiBatchPollTimer);
+            aiBatchPollTimer = window.setInterval(function () {
+              pollAiBatchStatus(aiBatchRunId);
+            }, 1500);
+            pollAiBatchStatus(aiBatchRunId);
+          })
+          .catch(function () {
+            setMessage(summaryTarget, "AI second-pass batch failed.", true);
+            hideAiBatchLoading();
+          });
+      }
+
+      function runLiveExtractionBatch(button) {
+        var summaryTarget = document.querySelector("[data-live-extraction-summary]");
+        if (aiBatchRunning) {
+          return;
+        }
+        if (!liveExtractionStartEndpoint) {
+          setMessage(summaryTarget, "Live extraction endpoint is not available.", true);
+          return;
+        }
+        if (!window.confirm("Run live extraction for all preprocessed files? This may use API credits and replace current reviewed rows.")) {
+          return;
+        }
+
+        showAiBatchLoading("live-extraction");
+        setMessage(summaryTarget, "Extraction batch is running. This may take a while...", false);
+        fetch(liveExtractionStartEndpoint, {
+          method: "POST",
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            if (!result.ok || !payload.success) {
+              setMessage(summaryTarget, payload.message || "Extraction batch failed.", true);
+              hideAiBatchLoading();
+              return;
+            }
+            aiBatchRunId = payload.batch_run_id || "";
+            updateAiBatchProgress(payload.status || "queued", payload.summary || {}, "live-extraction");
+            window.clearInterval(aiBatchPollTimer);
+            aiBatchPollTimer = window.setInterval(function () {
+              pollLiveExtractionStatus(aiBatchRunId);
+            }, 1500);
+            pollLiveExtractionStatus(aiBatchRunId);
+          })
+          .catch(function () {
+            setMessage(summaryTarget, "Extraction batch failed.", true);
+            hideAiBatchLoading();
+          });
+      }
+
+      function runAiRowRecheck(button) {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var formData = new FormData();
+
+        if (!activeGuidedCard || !aiRecheckEndpoint) {
+          return;
+        }
+        if (!window.confirm("Ask AI to recheck this row? This will use API credits.")) {
+          return;
+        }
+
+        formData.append("row_id", activeGuidedCard.dataset.rowId || "");
+        button.disabled = true;
+        setMessage(modal.querySelector("[data-guided-message]"), "AI is rechecking this row...", false);
+        fetch(aiRecheckEndpoint, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            var aiResult = payload.result || {};
+            if (!result.ok || !payload.success) {
+              setMessage(modal.querySelector("[data-guided-message]"), payload.message || "AI recheck failed.", true);
+              return;
+            }
+
+            renderAiSecondPassSuggestion(aiResult);
+            if (aiResult.recommendation === "auto_fill") {
+              applyAiFieldsToModal(aiResult.fields_to_update || {});
+              activeGuidedDecision = "ai_suggestion_applied";
+              setMessage(modal.querySelector("[data-guided-message]"), "AI auto-filled this suggestion with " + Math.round((Number(aiResult.confidence || 0) || 0) * 100) + "% confidence. Please confirm.", false);
+            } else if (aiResult.recommendation === "auto_confirm" && payload.auto_confirmed) {
+              applyAiFieldsToModal(payload.updated_fields || {});
+              writeGuidedValuesToCard();
+              markCardAiAutoConfirmed(activeGuidedCard, payload);
+              setMessage(modal.querySelector("[data-guided-message]"), "AI auto-confirmed this row with " + Math.round((Number(aiResult.confidence || 0) || 0) * 100) + "% confidence. Audit details were saved.", false);
+            } else if (aiResult.recommendation === "no_suggestion") {
+              setMessage(modal.querySelector("[data-guided-message]"), "AI did not find a reliable suggestion. Please review manually.", false);
+            } else {
+              setMessage(modal.querySelector("[data-guided-message]"), "AI found a suggestion. Apply it only if it matches the source image.", false);
+            }
+            updateAiRecheckButton();
+          })
+          .catch(function () {
+            setMessage(modal.querySelector("[data-guided-message]"), "AI recheck failed.", true);
+          })
+          .finally(function () {
+            button.disabled = false;
+          });
+      }
+
+      function setCardReviewStatus(card, status) {
+        var statusInput = card.querySelector('input[name="review_status"]');
+        var saveButton = card.querySelector("[data-save-reviewed-button]");
+        var reopenButton = card.querySelector("[data-reopen-review-button]");
+
+        card.dataset.reviewStatus = status;
+        if (statusInput) {
+          statusInput.value = status;
+        }
+        if (saveButton) {
+          saveButton.hidden = status === "reviewed";
+        }
+        if (reopenButton) {
+          reopenButton.hidden = status !== "reviewed";
+        }
+      }
+
+      function updateReviewCounts() {
+        var cards = Array.prototype.slice.call(document.querySelectorAll("[data-review-card]"));
+        var needsReviewCount = cards.filter(function (card) {
+          return card.dataset.reviewStatus === "needs_review";
+        }).length;
+        var reviewedCount = cards.filter(function (card) {
+          return card.dataset.reviewStatus === "reviewed";
+        }).length;
+        var countTargets = {
+          needs_review: needsReviewCount,
+          reviewed: reviewedCount,
+          all: cards.length
+        };
+
+        Object.keys(countTargets).forEach(function (key) {
+          var target = document.querySelector('[data-review-count="' + key + '"]');
+          if (target) {
+            target.textContent = countTargets[key];
+          }
+        });
+      }
+
+      function addSelectOption(select, value, label) {
+        var option = document.createElement("option");
+        option.value = value;
+        option.textContent = label || value;
+        select.appendChild(option);
+      }
+
+      function populateReviewedFilterDropdowns() {
+        var workerSelect = document.querySelector("[data-reviewed-worker-filter]");
+        var dateSelect = document.querySelector("[data-reviewed-date-filter]");
+        var issueSelect = document.querySelector("[data-reviewed-issue-filter]");
+        var workers = new Set();
+        var dates = new Set();
+        var issues = new Set();
+
+        document.querySelectorAll("[data-review-card]").forEach(function (card) {
+          var worker = cardFieldValue(card, "worker");
+          var date = cardFieldValue(card, "date");
+          var issue = cardFieldValue(card, "review_reason");
+
+          if (worker) {
+            workers.add(worker);
+          }
+          if (date) {
+            dates.add(date);
+          }
+          if (issue) {
+            issues.add(issue);
+          }
+        });
+
+        [
+          [workerSelect, workers, "All Workers"],
+          [dateSelect, dates, "All Dates"],
+          [issueSelect, issues, "All Issue Types"]
+        ].forEach(function (item) {
+          var select = item[0];
+          var values = Array.from(item[1]).sort();
+          var defaultLabel = item[2];
+
+          if (!select) {
+            return;
+          }
+
+          select.innerHTML = "";
+          addSelectOption(select, "", defaultLabel);
+          values.forEach(function (value) {
+            addSelectOption(select, value, value);
+          });
+        });
+      }
+
+      function cardForRowId(rowId) {
+        return document.querySelector('[data-review-card][data-row-id="' + rowId + '"]');
+      }
+
+      function tableRowForCard(card) {
+        return card ? document.querySelector('[data-review-table-row][data-row-id="' + card.dataset.rowId + '"]') : null;
+      }
+
+      function cardForTableRow(row) {
+        return row ? cardForRowId(row.dataset.rowId || "") : null;
+      }
+
+      function unresolvedCards() {
+        var rows = Array.prototype.slice.call(document.querySelectorAll("[data-review-table-row]")).filter(function (row) {
+          var card = cardForTableRow(row);
+          return !row.hidden && card && cardMatchesReviewFilter(card, "needs_review");
+        });
+
+        rows.sort(function (a, b) {
+          var aSkipped = skippedRowIds.indexOf(a.dataset.rowId) !== -1;
+          var bSkipped = skippedRowIds.indexOf(b.dataset.rowId) !== -1;
+          if (aSkipped === bSkipped) {
+            return 0;
+          }
+          return aSkipped ? 1 : -1;
+        });
+
+        return rows.map(cardForTableRow).filter(Boolean);
+      }
+
+      function updateGuidedLaunchState() {
+        setAiBatchControlsDisabled(aiBatchRunning);
+      }
+
+      function cardMatchesReviewFilter(card, filterName) {
+        var reasonInput = card.querySelector('input[name="review_reason"]');
+        var attentionInput = card.querySelector('input[name="requires_attention"]');
+        var hasReviewReason = reasonInput && reasonInput.value.trim() !== "";
+        var requiresAttention = attentionInput && attentionInput.checked;
+        var workerFilter = document.querySelector("[data-reviewed-worker-filter]");
+        var dateFilter = document.querySelector("[data-reviewed-date-filter]");
+        var issueFilter = document.querySelector("[data-reviewed-issue-filter]");
+        var workerValue = cardFieldValue(card, "worker").toLocaleLowerCase();
+        var dateValue = cardFieldValue(card, "date");
+        var issueValue = cardFieldValue(card, "review_reason").toLocaleLowerCase();
+
+        if (filterName === "all") {
+          return true;
+        }
+        if (filterName === "needs_review") {
+          return card.dataset.reviewStatus === "needs_review" || requiresAttention || hasReviewReason;
+        }
+        if (filterName === "reviewed") {
+          if (card.dataset.reviewStatus !== "reviewed") {
+            return false;
+          }
+          if (workerFilter && workerFilter.value && workerValue !== workerFilter.value.toLocaleLowerCase()) {
+            return false;
+          }
+          if (dateFilter && dateFilter.value && dateValue !== dateFilter.value) {
+            return false;
+          }
+          if (issueFilter && issueFilter.value && issueValue !== issueFilter.value.toLocaleLowerCase()) {
+            return false;
+          }
+          return true;
+        }
+        return card.dataset.reviewStatus === filterName;
+      }
+
+      function reviewSummaryForCard(card) {
+        var reason = cardFieldValue(card, "review_reason");
+        var hrDecision = cardFieldValue(card, "hr_decision");
+        var missing = guidedMissingFields(
+          cardFieldValue(card, "start_time"),
+          cardFieldValue(card, "end_time"),
+          cardFieldValue(card, "hours_worked"),
+          cardFieldValue(card, "notes"),
+          reason
+        );
+
+        if (hrDecision === "ai_auto_confirmed") {
+          return "AI auto-confirmed";
+        }
+        if (card.dataset.aiBatchStatus === "auto_filled") {
+          return "AI auto-filled; needs HR confirmation";
+        }
+        if (card.dataset.reviewStatus === "reviewed") {
+          return "Reviewed";
+        }
+        if (missing.length) {
+          return "Missing " + missing.join(", ");
+        }
+        if (reason) {
+          return formatIssueLabel(reason);
+        }
+        return "No issue";
+      }
+
+      function syncReviewTableRow(card) {
+        var row = tableRowForCard(card);
+        var statusCell = row ? row.querySelector("[data-table-status]") : null;
+        var workerCell = row ? row.querySelector("[data-table-worker]") : null;
+        var dateCell = row ? row.querySelector("[data-table-date]") : null;
+        var issueCell = row ? row.querySelector("[data-table-issue]") : null;
+        var openButton = row ? row.querySelector("[data-open-review-row]") : null;
+        var reopenButton = row ? row.querySelector("[data-table-reopen-review]") : null;
+
+        if (!row) {
+          return;
+        }
+
+        row.dataset.reviewStatus = card.dataset.reviewStatus || "";
+        if (statusCell) {
+          statusCell.textContent = card.dataset.reviewStatus === "reviewed" || card.dataset.reviewStatus === "clean" ? "✓" : "☐";
+        }
+        if (workerCell) {
+          workerCell.textContent = cardFieldValue(card, "worker") || "Blank";
+        }
+        if (dateCell) {
+          dateCell.textContent = formatReviewDate(cardFieldValue(card, "date"));
+        }
+        if (issueCell) {
+          issueCell.textContent = formatIssueLabel(cardFieldValue(card, "review_reason") || card.dataset.reviewStatus || "clean");
+        }
+        if (openButton) {
+          openButton.textContent = card.dataset.reviewStatus === "reviewed" ? "Open" : "Review";
+        }
+        if (reopenButton) {
+          reopenButton.hidden = card.dataset.reviewStatus !== "reviewed";
+        }
+      }
+
+      function applyReviewFilter(filterName) {
+        var visibleCount = 0;
+        var emptyState = document.querySelector("[data-review-empty]");
+        var tableEmptyState = document.querySelector("[data-review-table-empty-message]");
+
+        activeReviewFilter = filterName;
+        document.querySelectorAll("[data-review-filter]").forEach(function (button) {
+          button.classList.toggle("active", button.dataset.reviewFilter === filterName);
+        });
+
+        document.querySelectorAll("[data-review-card]").forEach(function (card) {
+          var isVisible = cardMatchesReviewFilter(card, filterName);
+          var tableRow = tableRowForCard(card);
+          card.hidden = true;
+          if (tableRow) {
+            tableRow.hidden = !isVisible;
+          }
+          if (isVisible) {
+            visibleCount += 1;
+          }
+        });
+
+        if (emptyState) {
+          emptyState.hidden = visibleCount !== 0;
+        }
+        if (tableEmptyState) {
+          tableEmptyState.hidden = visibleCount !== 0;
+        }
+
+        document.body.classList.toggle("review-compact", filterName === "all");
+        document.querySelector("[data-reviewed-filter-controls]").hidden = filterName !== "reviewed";
+      }
+
+      function appendCardField(formData, card, fieldName) {
+        var field = card.querySelector('[name="' + fieldName + '"]');
+        formData.append(fieldName, field ? field.value : "");
+      }
+
+      function setHiddenCardField(card, fieldName, value) {
+        var field = card.querySelector('[name="' + fieldName + '"]');
+        if (field) {
+          field.value = value;
+        }
+      }
+
+      function saveCardAsReviewed(card, button, decision, correctionNote) {
+        var messageTarget = card.querySelector("[data-row-action-message]");
+        var formData = new FormData();
+
+        formData.append("row_id", card.dataset.rowId || "");
+        ["worker", "date", "start_time", "end_time", "hours_worked", "notes"].forEach(function (fieldName) {
+          appendCardField(formData, card, fieldName);
+        });
+        formData.append("hr_decision", decision || "confirmed");
+        formData.append("hr_correction_note", correctionNote || "");
+
+        if (button) {
+          button.disabled = true;
+        }
+        return fetch(saveReviewedEndpoint, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            if (!result.ok || !payload.success) {
+              setMessage(messageTarget, payload.message || "Could not save row.", true);
+              setMessage(document.querySelector("[data-guided-message]"), payload.message || "Could not save row.", true);
+              return false;
+            }
+
+            var reasonInput = card.querySelector('input[name="review_reason"]');
+            var attentionInput = card.querySelector('input[name="requires_attention"]');
+
+            if (reasonInput) {
+              reasonInput.value = "";
+              reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            if (attentionInput) {
+              attentionInput.checked = false;
+              attentionInput.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            setHiddenCardField(card, "hr_decision", decision || "confirmed");
+            setHiddenCardField(card, "hr_correction_note", correctionNote || "");
+
+            setMessage(messageTarget, payload.message || "Row saved and marked reviewed.", false);
+            setCardReviewStatus(card, "reviewed");
+            card.classList.remove("attention-card");
+            syncReviewTableRow(card);
+            updateReviewCounts();
+            updateGuidedLaunchState();
+            updateAiBatchRunAvailability();
+            applyReviewFilter(activeReviewFilter);
+            return true;
+          })
+          .catch(function () {
+            setMessage(messageTarget, "Could not save row.", true);
+            setMessage(document.querySelector("[data-guided-message]"), "Could not save row.", true);
+            return false;
+          })
+          .finally(function () {
+            if (button) {
+              button.disabled = false;
+            }
+          });
+      }
+
+      function reopenCardForReview(card, button) {
+        var messageTarget = card.querySelector("[data-row-action-message]");
+        var formData = new FormData();
+
+        formData.append("row_id", card.dataset.rowId || "");
+        button.disabled = true;
+
+        fetch(reopenEndpoint, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            if (!result.ok || !payload.success) {
+              setMessage(messageTarget, payload.message || "Could not reopen row.", true);
+              return;
+            }
+
+            var reasonInput = card.querySelector('input[name="review_reason"]');
+            var attentionInput = card.querySelector('input[name="requires_attention"]');
+
+            if (reasonInput) {
+              reasonInput.value = "manually_reopened";
+              reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            if (attentionInput) {
+              attentionInput.checked = true;
+              attentionInput.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+
+            setMessage(messageTarget, payload.message || "Row reopened for review.", false);
+            setCardReviewStatus(card, "needs_review");
+            card.classList.add("attention-card");
+            syncReviewTableRow(card);
+            updateReviewCounts();
+            updateGuidedLaunchState();
+            updateAiBatchRunAvailability();
+            applyReviewFilter(activeReviewFilter);
+          })
+          .catch(function () {
+            setMessage(messageTarget, "Could not reopen row.", true);
+          })
+          .finally(function () {
+            button.disabled = false;
+          });
+      }
+
+      function cardFieldValue(card, fieldName) {
+        var field = card.querySelector('[name="' + fieldName + '"]');
+        return field ? field.value : "";
+      }
+
+      function cardRequiresAttention(card) {
+        var attentionInput = card.querySelector('input[name="requires_attention"]');
+        return Boolean(attentionInput && attentionInput.checked);
+      }
+
+      function guidedCardIndex(card) {
+        return unresolvedCards().indexOf(card);
+      }
+
+      function openGuidedReview(card) {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var cards = unresolvedCards();
+        var position = cards.indexOf(card);
+        var image = null;
+        var imageLink = null;
+        var modalImage = modal.querySelector("[data-guided-image]");
+        var openImage = modal.querySelector("[data-guided-open-image]");
+
+        if (!card) {
+          card = cards[0];
+          position = 0;
+        }
+        if (!card) {
+          return;
+        }
+        if (position === -1) {
+          cards = [card];
+          position = 0;
+        }
+
+        image = card.querySelector(".source-preview");
+        imageLink = card.querySelector(".source-preview-link");
+
+        activeGuidedCard = card;
+        activeGuidedDecision = "";
+
+        modal.querySelector("[data-guided-position]").textContent = "Review Item " + (position + 1) + " of " + cards.length;
+        modal.querySelector("[data-guided-reviewing-title]").textContent = "Review: " + (cardFieldValue(card, "worker") || "Blank") + " — " + formatReviewDate(cardFieldValue(card, "date"));
+        modal.querySelector("[data-guided-worker]").textContent = cardFieldValue(card, "worker") || "Blank";
+        modal.querySelector("[data-guided-date]").textContent = formatReviewDate(cardFieldValue(card, "date"));
+        modal.querySelector("[data-guided-issue-label]").textContent = formatIssueLabel(cardFieldValue(card, "review_reason"));
+        modal.querySelector("[data-guided-action-needed]").textContent = guidedActionNeeded(card);
+        modal.querySelector("[data-guided-card-number]").textContent = cardFieldValue(card, "source_type") === "physical_time_card" ? (parseCardNumber(card) || "Not visible") : "Not applicable";
+        modal.querySelector("[data-guided-source-type]").textContent = cardFieldValue(card, "source_type_label") || cardFieldValue(card, "source_type") || "Blank";
+        modal.querySelector("[data-guided-source-name]").textContent = cardFieldValue(card, "source_original_filename");
+        modal.querySelector("[data-guided-ai-start]").textContent = cardFieldValue(card, "start_time") || "blank";
+        modal.querySelector("[data-guided-ai-end]").textContent = cardFieldValue(card, "end_time") || "blank";
+        modal.querySelector("[data-guided-ai-hours]").textContent = cardFieldValue(card, "hours_worked") || "blank";
+
+        modal.querySelector("[data-guided-start-time]").value = cardFieldValue(card, "start_time");
+        modal.querySelector("[data-guided-end-time]").value = cardFieldValue(card, "end_time");
+        modal.querySelector("[data-guided-hours-worked]").value = cardFieldValue(card, "hours_worked");
+        modal.querySelector("[data-guided-notes]").value = cardFieldValue(card, "notes");
+        modal.querySelector("[data-guided-correction-note]").value = cardFieldValue(card, "hr_correction_note");
+        modal.querySelector("[data-guided-message]").hidden = true;
+        resetAiSecondPassBox();
+        guidedInitialValues = guidedCurrentValues();
+
+        if (image && image.src) {
+          modalImage.src = image.src;
+          modalImage.alt = image.alt || "Source image";
+          modalImage.hidden = false;
+          openImage.href = imageLink ? imageLink.href : image.src;
+          openImage.hidden = false;
+        } else {
+          modalImage.hidden = true;
+          openImage.hidden = true;
+        }
+
+        resetGuidedCropPreview();
+        updateGuidedHoursWorked();
+        guidedInitialValues.hours_worked = modal.querySelector("[data-guided-hours-worked]").value;
+        updateGuidedConfirmVisibility();
+        updateAiRecheckButton();
+        modal.hidden = false;
+      }
+
+      function closeGuidedReview() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        modal.hidden = true;
+        activeGuidedCard = null;
+        activeGuidedDecision = "";
+        resetAiSecondPassBox();
+      }
+
+      function setLightboxZoom(value) {
+        var lightboxImage = document.querySelector("[data-image-lightbox-image]");
+        lightboxZoom = Math.min(4, Math.max(0.5, value));
+        if (lightboxImage) {
+          lightboxImage.style.width = (lightboxZoom * 100) + "%";
+        }
+      }
+
+      function openImageLightbox() {
+        var sourceImage = document.querySelector("[data-guided-image]");
+        var lightbox = document.querySelector("[data-image-lightbox]");
+        var lightboxImage = document.querySelector("[data-image-lightbox-image]");
+
+        if (!sourceImage || !sourceImage.src || sourceImage.hidden || !lightbox || !lightboxImage) {
+          return;
+        }
+
+        lightboxImage.src = sourceImage.src;
+        lightboxImage.alt = sourceImage.alt || "Enlarged source image";
+        setLightboxZoom(1);
+        lightbox.hidden = false;
+      }
+
+      function closeImageLightbox() {
+        var lightbox = document.querySelector("[data-image-lightbox]");
+        var lightboxImage = document.querySelector("[data-image-lightbox-image]");
+
+        if (lightbox) {
+          lightbox.hidden = true;
+        }
+        if (lightboxImage) {
+          lightboxImage.removeAttribute("src");
+          lightboxImage.removeAttribute("style");
+        }
+        lightboxZoom = 1;
+      }
+
+      function openFirstUnresolved() {
+        var savedRowId = window.sessionStorage.getItem(guidedProgressKey);
+        var cards = unresolvedCards();
+        var savedIndex = cards.findIndex(function (card) {
+          return card.dataset.rowId === savedRowId;
+        });
+        var queueMessage = document.querySelector("[data-guided-queue-message]");
+        var nextCard = cards[savedIndex + 1] || cards[0];
+
+        if (!cards.length) {
+          if (queueMessage) {
+            setMessage(queueMessage, "No items need review.", false);
+          }
+          return;
+        }
+
+        openGuidedReview(nextCard);
+      }
+
+      function writeGuidedValuesToCard() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var fields = [
+          ["start_time", "[data-guided-start-time]"],
+          ["end_time", "[data-guided-end-time]"],
+          ["hours_worked", "[data-guided-hours-worked]"],
+          ["notes", "[data-guided-notes]"]
+        ];
+
+        fields.forEach(function (pair) {
+          var cardField = activeGuidedCard.querySelector('[name="' + pair[0] + '"]');
+          var modalField = modal.querySelector(pair[1]);
+          if (cardField && modalField) {
+            cardField.value = modalField.value;
+            cardField.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+        syncReviewTableRow(activeGuidedCard);
+      }
+
+      function saveGuidedAndNext() {
+        var modal = document.querySelector("[data-guided-review-modal]");
+        var correctionNote = modal.querySelector("[data-guided-correction-note]").value;
+        var decision = activeGuidedDecision || (guidedValuesChanged() ? "changed" : "reviewed_manual");
+        var currentCard = activeGuidedCard;
+        var cards = unresolvedCards();
+        var currentIndex = cards.indexOf(currentCard);
+        var nextCard = cards[currentIndex + 1] || cards[0];
+
+        if (!currentCard) {
+          return;
+        }
+
+        writeGuidedValuesToCard();
+        saveCardAsReviewed(currentCard, modal.querySelector("[data-guided-save-next]"), decision, correctionNote).then(function (saved) {
+          if (!saved) {
+            return;
+          }
+          window.sessionStorage.setItem(guidedProgressKey, currentCard.dataset.rowId || "");
+          skippedRowIds = skippedRowIds.filter(function (rowId) {
+            return rowId !== currentCard.dataset.rowId;
+          });
+          updateGuidedLaunchState();
+          if (!unresolvedCards().length) {
+            closeGuidedReview();
+          } else {
+            openGuidedReview(nextCard && cardMatchesReviewFilter(nextCard, "needs_review") ? nextCard : unresolvedCards()[0]);
+          }
+        });
+      }
+
+      function skipGuidedForLater() {
+        var cards = unresolvedCards();
+        var nextCards = [];
+        var queueMessage = document.querySelector("[data-guided-queue-message]");
+
+        if (activeGuidedCard) {
+          if (skippedRowIds.indexOf(activeGuidedCard.dataset.rowId) === -1) {
+            skippedRowIds.push(activeGuidedCard.dataset.rowId);
+          }
+          window.sessionStorage.setItem(guidedProgressKey, activeGuidedCard.dataset.rowId || "");
+          updateGuidedLaunchState();
+        }
+        nextCards = unresolvedCards().filter(function (card) {
+          return skippedRowIds.indexOf(card.dataset.rowId) === -1;
+        });
+        if (!nextCards.length) {
+          if (queueMessage) {
+            setMessage(queueMessage, "No new unresolved items left. Skipped items remain in Needs Review.", false);
+          }
+          closeGuidedReview();
+          return;
+        }
+        openGuidedReview(nextCards[0]);
+      }
+
+      document.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-sop-add-button]");
+        var saveReviewedButton = event.target.closest("[data-save-reviewed-button]");
+        var reopenButton = event.target.closest("[data-reopen-review-button]");
+        var reviewFilterButton = event.target.closest("[data-review-filter]");
+        var reviewTableRow = event.target.closest("[data-review-table-row]");
+        var openReviewRowButton = event.target.closest("[data-open-review-row]");
+        var tableReopenButton = event.target.closest("[data-table-reopen-review]");
+        var startGuidedButton = event.target.closest("[data-start-guided-review]");
+        var guidedCloseButton = event.target.closest("[data-guided-close]");
+        var guidedDecisionButton = event.target.closest("[data-guided-decision]");
+        var guidedSkipButton = event.target.closest("[data-guided-skip]");
+        var guidedSaveNextButton = event.target.closest("[data-guided-save-next]");
+        var aiRecheckButton = event.target.closest("[data-guided-ai-recheck]");
+        var aiBatchButton = event.target.closest("[data-ai-second-pass-batch]");
+        var liveExtractionBatchButton = event.target.closest("[data-live-extraction-batch]");
+        var aiBatchCancelButton = event.target.closest("[data-ai-batch-cancel]");
+        var aiSuggestionApplyButton = event.target.closest("[data-ai-suggestion-apply]");
+        var aiSuggestionRejectButton = event.target.closest("[data-ai-suggestion-reject]");
+        var imageEnlargeButton = event.target.closest("[data-guided-image-enlarge]");
+        var imageLightbox = event.target.closest("[data-image-lightbox]");
+        var imageLightboxPanel = event.target.closest(".image-lightbox-panel");
+        var imageLightboxCloseButton = event.target.closest("[data-image-lightbox-close]");
+        var lightboxZoomInButton = event.target.closest("[data-lightbox-zoom-in]");
+        var lightboxZoomOutButton = event.target.closest("[data-lightbox-zoom-out]");
+        var lightboxZoomResetButton = event.target.closest("[data-lightbox-zoom-reset]");
+
+        if (startGuidedButton) {
+          event.preventDefault();
+          if (aiBatchRunning) {
+            return;
+          }
+          openFirstUnresolved();
+          return;
+        }
+
+        if (guidedCloseButton) {
+          event.preventDefault();
+          closeGuidedReview();
+          return;
+        }
+
+        if (guidedDecisionButton) {
+          event.preventDefault();
+          if (guidedDecisionButton.dataset.guidedDecision === "confirmed" && !activeGuidedConfirmAvailable) {
+            return;
+          }
+          activeGuidedDecision = guidedDecisionButton.dataset.guidedDecision;
+          document.querySelectorAll("[data-guided-decision]").forEach(function (decisionButton) {
+            decisionButton.classList.toggle("active", decisionButton === guidedDecisionButton);
+          });
+          saveGuidedAndNext();
+          return;
+        }
+
+        if (guidedSkipButton) {
+          event.preventDefault();
+          skipGuidedForLater();
+          return;
+        }
+
+        if (guidedSaveNextButton) {
+          event.preventDefault();
+          saveGuidedAndNext();
+          return;
+        }
+
+        if (aiRecheckButton) {
+          event.preventDefault();
+          runAiRowRecheck(aiRecheckButton);
+          return;
+        }
+
+        if (aiBatchButton) {
+          event.preventDefault();
+          runAiSecondPassBatch(aiBatchButton);
+          return;
+        }
+
+        if (liveExtractionBatchButton) {
+          event.preventDefault();
+          runLiveExtractionBatch(liveExtractionBatchButton);
+          return;
+        }
+
+        if (aiBatchCancelButton) {
+          event.preventDefault();
+          cancelAiBatchLoading();
+          return;
+        }
+
+        if (aiSuggestionApplyButton) {
+          event.preventDefault();
+          applyAiSuggestionToModal();
+          return;
+        }
+
+        if (aiSuggestionRejectButton) {
+          event.preventDefault();
+          resetAiSecondPassBox();
+          setMessage(document.querySelector("[data-guided-message]"), "AI suggestion rejected. Continue manual review.", false);
+          return;
+        }
+
+        if (tableReopenButton) {
+          event.preventDefault();
+          reopenCardForReview(cardForTableRow(tableReopenButton.closest("[data-review-table-row]")), tableReopenButton);
+          return;
+        }
+
+        if (openReviewRowButton || (reviewTableRow && !event.target.closest("button, a, input, select, textarea"))) {
+          event.preventDefault();
+          openGuidedReview(cardForTableRow(reviewTableRow || openReviewRowButton.closest("[data-review-table-row]")));
+          return;
+        }
+
+        if (imageEnlargeButton) {
+          event.preventDefault();
+          openImageLightbox();
+          return;
+        }
+
+        if (imageLightboxCloseButton) {
+          event.preventDefault();
+          closeImageLightbox();
+          return;
+        }
+
+        if (lightboxZoomInButton) {
+          event.preventDefault();
+          setLightboxZoom(lightboxZoom + 0.25);
+          return;
+        }
+
+        if (lightboxZoomOutButton) {
+          event.preventDefault();
+          setLightboxZoom(lightboxZoom - 0.25);
+          return;
+        }
+
+        if (lightboxZoomResetButton) {
+          event.preventDefault();
+          setLightboxZoom(1);
+          return;
+        }
+
+        if (imageLightbox && !imageLightboxPanel) {
+          event.preventDefault();
+          closeImageLightbox();
+          return;
+        }
+
+        if (reviewFilterButton) {
+          event.preventDefault();
+          applyReviewFilter(reviewFilterButton.dataset.reviewFilter);
+          return;
+        }
+
+        if (saveReviewedButton) {
+          event.preventDefault();
+          saveCardAsReviewed(saveReviewedButton.closest("[data-review-card]"), saveReviewedButton);
+          return;
+        }
+
+        if (reopenButton) {
+          event.preventDefault();
+          reopenCardForReview(reopenButton.closest("[data-review-card]"), reopenButton);
+          return;
+        }
+
+        if (!button) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (!endpoint) {
+          return;
+        }
+
+        var control = button.closest("[data-sop-add-control]");
+        var codeInput = control ? control.querySelector("[data-sop-code-input]") : null;
+        var meaningInput = control ? control.querySelector("[data-sop-meaning]") : null;
+        var applyInput = control ? control.querySelector("[data-sop-apply]") : null;
+        var messageTarget = control ? control.querySelector("[data-sop-message]") : null;
+        var code = codeInput ? codeInput.value.trim() : (control ? control.dataset.sopCode : "");
+        var meaning = meaningInput ? meaningInput.value.trim() : "";
+
+        if (!code) {
+          setMessage(messageTarget, "Please enter a short code (e.g. AL, MC, OFF).", true);
+          if (codeInput) codeInput.focus();
+          button.disabled = false;
+          return;
+        }
+        if (code.length > 20) {
+          setMessage(messageTarget, "Code must be 20 characters or less.", true);
+          if (codeInput) codeInput.focus();
+          button.disabled = false;
+          return;
+        }
+        var formData = new FormData();
+
+        formData.append("code", code);
+        formData.append("meaning", meaning);
+        if (applyInput && applyInput.checked) {
+          formData.append("apply_to_matching_rows", "true");
+        }
+
+        button.disabled = true;
+
+        fetch(endpoint, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin"
+        })
+          .then(function (response) {
+            return response.json().then(function (payload) {
+              return { ok: response.ok, payload: payload };
+            });
+          })
+          .then(function (result) {
+            var payload = result.payload || {};
+            var message = payload.message || (result.ok ? "SOP code added." : "Could not add SOP code.");
+            var normalizedCode = payload.normalized_code || normalizeSopCode(code);
+
+            if (!result.ok || !payload.success) {
+              setMessage(messageTarget, message, true);
+              return;
+            }
+
+            setMessage(messageTarget, message, false);
+            removeGroupedControls(normalizedCode);
+
+            if (applyInput && applyInput.checked) {
+              updateMatchingVisibleRows(normalizedCode);
+            }
+          })
+          .catch(function () {
+            setMessage(messageTarget, "Could not add SOP code.", true);
+          })
+          .finally(function () {
+            button.disabled = false;
+          });
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          closeImageLightbox();
+        }
+      });
+
+      document.addEventListener("input", function (event) {
+        if (!event.target.matches('input[name="start_time"], input[name="end_time"]')) {
+          return;
+        }
+
+        updateCardHoursWorked(event.target.closest("[data-review-card]"));
+      });
+
+      document.addEventListener("change", function (event) {
+        if (!event.target.matches('input[name="start_time"], input[name="end_time"]')) {
+          return;
+        }
+
+        updateCardHoursWorked(event.target.closest("[data-review-card]"));
+      });
+
+      document.addEventListener("input", function (event) {
+        if (!event.target.matches("[data-guided-start-time], [data-guided-end-time]")) {
+          return;
+        }
+
+        updateGuidedHoursWorked();
+        updateGuidedConfirmVisibility();
+      });
+
+      document.addEventListener("change", function (event) {
+        if (!event.target.matches("[data-guided-start-time], [data-guided-end-time]")) {
+          return;
+        }
+
+        updateGuidedHoursWorked();
+        updateGuidedConfirmVisibility();
+      });
+
+      document.addEventListener("input", function (event) {
+        if (!event.target.matches("[data-guided-hours-worked], [data-guided-notes], [data-guided-correction-note]")) {
+          return;
+        }
+
+        updateGuidedConfirmVisibility();
+      });
+
+      document.addEventListener("change", function (event) {
+        if (!event.target.matches("[data-reviewed-worker-filter], [data-reviewed-date-filter], [data-reviewed-issue-filter]")) {
+          return;
+        }
+
+        applyReviewFilter(activeReviewFilter);
+      });
+
+      document.querySelectorAll("[data-review-card]").forEach(function (card) {
+        updateCardHoursWorked(card);
+        syncReviewTableRow(card);
+      });
+      populateReviewedFilterDropdowns();
+      updateReviewCounts();
+      applyReviewFilter(activeReviewFilter);
+      updateGuidedLaunchState();
+      updateAiBatchRunAvailability();
+    })();
+  </script>
+  <script>
+    (function () {
+      var exportLink = document.querySelector("[data-export-excel]");
+      var backupNotice = document.querySelector("[data-export-backup]");
+
+      if (!exportLink) {
+        return;
+      }
+
+      exportLink.addEventListener("click", function (event) {
+        if (event.defaultPrevented) {
+          return;
+        }
+
+        event.preventDefault();
+        if (!window.confirm("Confirm export Excel file?")) {
+          return;
+        }
+
+        if (backupNotice) {
+          backupNotice.hidden = false;
+        }
+        window.location.href = exportLink.href;
+      });
+    })();
+  </script>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Timesheet Analysis Tool{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v={{ asset_version }}">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="site-header">
+        <nav class="nav">
+          <a class="brand" href="/">Timesheet Analysis Tool</a>
+          <div class="nav-links" aria-label="Primary navigation">
+            <a href="/">Home</a>
+          </div>
+        </nav>
+      </header>
+
+      <main class="page">
+        {% if workflow_steps and session_id %}
+          <nav class="workflow-steps" aria-label="Monthly workflow steps">
+            {% for step in workflow_steps %}
+              {% if step.endpoint %}
+                <a
+                  class="workflow-step {% if step.number == current_step %}active{% elif step.number < current_step %}complete{% endif %}"
+                  href="{{ url_for(step.endpoint, session_id=session_id) }}"
+                >
+                  <span>{{ step.number }}</span>
+                  {{ step.label }}
+                </a>
+              {% else %}
+                <span class="workflow-step disabled {% if step.number == current_step %}active{% endif %}">
+                  <span>{{ step.number }}</span>
+                  {{ step.label }}
+                  <small>Coming Soon</small>
+                </span>
+              {% endif %}
+            {% endfor %}
+          </nav>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

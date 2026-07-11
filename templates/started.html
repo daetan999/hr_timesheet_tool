@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ month_label }} {{ year }} - Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="intro">
+    <p class="eyebrow">Step 1</p>
+    <h1>{{ month_label }} {{ year }}</h1>
+    <p class="description">
+      {{ month_label }} {{ year }} is open. Uploads, review work, and the final
+      Excel export for this month are all saved in this session.
+    </p>
+  </section>
+
+  <div class="actions">
+    <a class="button-link" href="{{ url_for('session_workers', session_id=session_id) }}">Confirm Workers</a>
+    <a class="button-link secondary-link" href="/">Change Month or Year</a>
+  </div>
+{% endblock %}

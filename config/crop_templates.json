@@ -1,0 +1,30 @@
+{
+  "physical_time_card_er_m_card_1": {
+    "template_name": "ER-M Physical Time Card - Card 1",
+    "source_type": "physical_time_card",
+    "card_number": 1,
+    "card_left_ratio": 0.15,
+    "card_right_ratio": 0.91,
+    "card_top_ratio": 0.12,
+    "card_bottom_ratio": 0.98,
+    "table_top_ratio_within_card": 0.37,
+    "table_bottom_ratio_within_card": 0.89,
+    "first_day": 1,
+    "last_day": 15,
+    "enabled": false
+  },
+  "physical_time_card_er_m_card_2": {
+    "template_name": "ER-M Physical Time Card - Card 2",
+    "source_type": "physical_time_card",
+    "card_number": 2,
+    "card_left_ratio": 0.15,
+    "card_right_ratio": 0.91,
+    "card_top_ratio": 0.12,
+    "card_bottom_ratio": 0.98,
+    "table_top_ratio_within_card": 0.37,
+    "table_bottom_ratio_within_card": 0.89,
+    "first_day": 16,
+    "last_day": 31,
+    "enabled": false
+  }
+}

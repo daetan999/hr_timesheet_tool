@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Workers - Timesheet Analysis Tool{% endblock %}
+
+{% block content %}
+  <section class="intro">
+    <p class="eyebrow">{% if session_id %}Step 2{% else %}Local setup{% endif %}</p>
+    <h1>Worker Masterlist</h1>
+    <p class="description">
+      Confirm the worker names and worker types used during timesheet preparation.
+    </p>
+  </section>
+
+  {% if message %}
+    <p class="notice success">{{ message }}</p>
+  {% endif %}
+
+  {% if error %}
+    <p class="notice error">{{ error }}</p>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Add Worker</h2>
+    <form
+      class="inline-form"
+      data-unsaved-warning
+      method="post"
+      action="{% if session_id %}{{ url_for('session_add_worker', session_id=session_id) }}{% else %}/workers/add{% endif %}"
+    >
+      <div class="field">
+        <label for="worker-name">Name</label>
+        <input id="worker-name" name="name" type="text" required>
+      </div>
+      <div class="field">
+        <label for="worker-type">Worker Type</label>
+        <select id="worker-type" name="worker_type" required>
+          {% for worker_type in worker_types %}
+            <option value="{{ worker_type }}">{{ worker_type }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit">Add Worker</button>
+    </form>
+  </section>
+
+  <section class="panel wide-panel">
+    {% if workers %}
+      <form
+        data-unsaved-warning
+        data-editable-list
+        method="post"
+        action="{% if session_id %}{{ url_for('session_update_workers', session_id=session_id) }}{% else %}/workers/save{% endif %}"
+      >
+        <div class="panel-head">
+          <h2>Saved Workers</h2>
+          <button type="button" data-edit-list-button>Edit</button>
+        </div>
+        <p class="notice mock-notice" data-edit-mode-banner hidden>Edit Mode Active</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Worker Type</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for worker in workers %}
+                <tr>
+                  <td>
+                    <input name="name" type="text" value="{{ worker.name }}" required readonly data-editable-field>
+                  </td>
+                  <td>
+                    <input name="worker_type" type="hidden" value="{{ worker.worker_type }}" data-readonly-mirror>
+                    <select name="worker_type" required disabled data-editable-field>
+                      {% for worker_type in worker_types %}
+                        <option value="{{ worker_type }}" {% if worker.worker_type == worker_type %}selected{% endif %}>
+                          {{ worker_type }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td class="delete-cell">
+                    <button
+                      name="delete_index"
+                      type="submit"
+                      value="{{ loop.index0 }}"
+                      formnovalidate
+                      data-confirm-delete
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <button type="submit" disabled hidden class="disabled-button" data-save-list-button>Save Worker Changes</button>
+      </form>
+    {% else %}
+      <h2>Saved Workers</h2>
+      <p class="empty-state">No workers yet — add the first name above to get started.</p>
+    {% endif %}
+  </section>
+
+  {% if session_id %}
+    <nav class="workflow-bottom-nav" aria-label="Workflow navigation">
+      <a class="button-link secondary-link" href="{{ url_for('session_started', session_id=session_id) }}">Back</a>
+      <div class="continue-action">
+        {% if workers %}
+          <a class="button-link" href="{{ url_for('session_sop_codes', session_id=session_id) }}">
+            Save &amp; Continue to SOP Codes
+          </a>
+        {% else %}
+          <button type="button" class="disabled-button" disabled>Save &amp; Continue to SOP Codes</button>
+          <p class="continue-reason">Add at least 1 worker before continuing.</p>
+        {% endif %}
+      </div>
+    </nav>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', path='unsaved_warning.js') }}"></script>
+{% endblock %}
