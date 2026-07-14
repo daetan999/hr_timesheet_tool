@@ -1,0 +1,24 @@
+# Temporal Fusion Transformer — hyperparameter manifest (illustrative blueprint).
+# Tracked per-run in MLflow; this file documents the architecture shape only.
+
+model: temporal_fusion_transformer
+framework: pytorch-forecasting
+
+architecture:
+  attention_heads: 4
+  d_model: 64
+  quantiles: [0.1, 0.5, 0.9]     # predictive intervals, not point estimates
+
+covariates:
+  static: [brand_tier, market_segment]
+  historical: [revpar, cancellation_rate, occupancy, adr]
+  known_future: [holidays, scheduled_conventions, day_of_week]
+
+training:
+  loss: quantile_loss
+  artifact_format: onnx
+  registry_gates: [integration_suite, champion_challenger_eval]
+
+result:
+  mape_before: 0.125
+  mape_after: 0.045

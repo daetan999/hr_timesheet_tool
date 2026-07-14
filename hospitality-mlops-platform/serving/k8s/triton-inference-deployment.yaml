@@ -1,0 +1,66 @@
+# Triton on EKS — deployment shape (illustrative blueprint).
+# Image tags, node selectors, and registry paths are placeholders.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton-inference
+  namespace: ml-serving
+  labels:
+    app: triton-inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: triton-inference
+  template:
+    metadata:
+      labels:
+        app: triton-inference
+    spec:
+      nodeSelector:
+        node.kubernetes.io/instance-type: g4dn.xlarge   # NVIDIA T4
+      containers:
+        - name: triton
+          image: nvcr.io/nvidia/tritonserver:<version>-py3
+          args:
+            - tritonserver
+            - --model-repository=s3://<model-artifact-bucket>/onnx   # sanitized
+            - --model-control-mode=poll                              # picks up MLflow promotions
+            - --repository-poll-secs=60
+          ports:
+            - containerPort: 8000   # HTTP
+            - containerPort: 8001   # gRPC
+            - containerPort: 8002   # metrics
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          readinessProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: 8000
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /v2/health/live
+              port: 8000
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: triton-inference
+  namespace: ml-serving
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: triton-inference
+  minReplicas: 2
+  maxReplicas: 8            # absorbs 10x reservation-volume spikes
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: triton_queue_duration_p99   # scale before the 150 ms SLO is threatened
+        target:
+          type: AverageValue
+          averageValue: "50m"

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 760" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1b2733"/></marker><marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e5d43"/></marker><marker id="arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a4a12"/></marker></defs>
+<rect x="0" y="0" width="1560" height="760" rx="18" fill="#f2f5ea" stroke="#d8dfcd"/>
+<text x="44" y="52" font-size="15" letter-spacing="4" fill="#5c6b60" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-weight="600">MERIDIAN &#183; TECHNICAL-TO-FINANCIAL TRANSMISSION</text>
+<text x="1516" y="52" text-anchor="end" font-size="13" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">EVERY MODEL METRIC LANDS ON A FINANCIAL STATEMENT</text>
+<rect x="40" y="96" width="440" height="104" rx="12" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="96" width="6" height="104" rx="3" fill="#1b2733"/>
+<text x="62" y="130" font-size="14.5" font-weight="700" fill="#16232e">Forecast error (MAPE) 12.5% &#8594; 4.5%</text>
+<text x="62" y="154" font-size="12" fill="#5c6b60">Temporal Fusion Transformer &#183; quantile outputs</text>
+<text x="62" y="176" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">TECHNICAL ACHIEVEMENT</text>
+<line x1="480" y1="148" x2="540" y2="148" stroke="#1b2733" stroke-width="2.2" marker-end="url(#arr)"/>
+<rect x="544" y="106" width="540" height="84" rx="12" fill="#f6f8f0" stroke="#d8dfcd"/>
+<text x="566" y="138" font-size="12.6" fill="#33413a">optimal occupancy &#215; ADR balance; surge-prices the last 20% of inventory</text>
+<text x="566" y="166" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">OPERATIONAL MECHANISM</text>
+<line x1="1084" y1="148" x2="1144" y2="148" stroke="#2e5d43" stroke-width="2.2" marker-end="url(#arrg)"/>
+<rect x="1148" y="96" width="372" height="104" rx="12" fill="#eef2e4" stroke="#7ba989"/>
+<text x="1170" y="136" font-size="14.5" font-weight="700" fill="#2e5d43">+4.2% RevPAR &#183; +$4.8M annual profit</text>
+<text x="1170" y="170" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">FINANCIAL OUTCOME</text>
+<rect x="40" y="220" width="440" height="104" rx="12" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="220" width="6" height="104" rx="3" fill="#1b2733"/>
+<text x="62" y="254" font-size="14.5" font-weight="700" fill="#16232e">Sub-30-min utility anomaly flags</text>
+<text x="62" y="278" font-size="12" fill="#5c6b60">LSTM autoencoder &#183; MSE reconstruction threshold</text>
+<text x="62" y="300" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">TECHNICAL ACHIEVEMENT</text>
+<line x1="480" y1="272" x2="540" y2="272" stroke="#1b2733" stroke-width="2.2" marker-end="url(#arr)"/>
+<rect x="544" y="230" width="540" height="84" rx="12" fill="#f6f8f0" stroke="#d8dfcd"/>
+<text x="566" y="262" font-size="12.6" fill="#33413a">ghost-leak shutoff + HVAC pre-cooling shifted to off-peak tariff windows</text>
+<text x="566" y="290" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">OPERATIONAL MECHANISM</text>
+<line x1="1084" y1="272" x2="1144" y2="272" stroke="#2e5d43" stroke-width="2.2" marker-end="url(#arrg)"/>
+<rect x="1148" y="220" width="372" height="104" rx="12" fill="#eef2e4" stroke="#7ba989"/>
+<text x="1170" y="260" font-size="14.5" font-weight="700" fill="#2e5d43">&#8722;14% utility waste &#183; &#8722;$1.8M OpEx</text>
+<text x="1170" y="294" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">FINANCIAL OUTCOME</text>
+<rect x="40" y="344" width="440" height="104" rx="12" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="344" width="6" height="104" rx="3" fill="#1b2733"/>
+<text x="62" y="378" font-size="14.5" font-weight="700" fill="#16232e">14-day MTTF failure probability</text>
+<text x="62" y="402" font-size="12" fill="#5c6b60">Weibull survival &#215; random forest on IoT signals</text>
+<text x="62" y="424" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">TECHNICAL ACHIEVEMENT</text>
+<line x1="480" y1="396" x2="540" y2="396" stroke="#1b2733" stroke-width="2.2" marker-end="url(#arr)"/>
+<rect x="544" y="354" width="540" height="84" rx="12" fill="#f6f8f0" stroke="#d8dfcd"/>
+<text x="566" y="386" font-size="12.6" fill="#33413a">$500 scheduled bearing swap replaces $120k seized-compressor emergency</text>
+<text x="566" y="414" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">OPERATIONAL MECHANISM</text>
+<line x1="1084" y1="396" x2="1144" y2="396" stroke="#2e5d43" stroke-width="2.2" marker-end="url(#arrg)"/>
+<rect x="1148" y="344" width="372" height="104" rx="12" fill="#eef2e4" stroke="#7ba989"/>
+<text x="1170" y="384" font-size="14.5" font-weight="700" fill="#2e5d43">&#8722;42% downtime &#183; +$1.5M CapEx deferred</text>
+<text x="1170" y="418" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">FINANCIAL OUTCOME</text>
+<rect x="40" y="468" width="440" height="104" rx="12" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="468" width="6" height="104" rx="3" fill="#1b2733"/>
+<text x="62" y="502" font-size="14.5" font-weight="700" fill="#16232e">GPU utilization ~5% &#8594; 80%+</text>
+<text x="62" y="526" font-size="12" fill="#5c6b60">Triton dynamic batching &#183; multi-model concurrency</text>
+<text x="62" y="548" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">TECHNICAL ACHIEVEMENT</text>
+<line x1="480" y1="520" x2="540" y2="520" stroke="#1b2733" stroke-width="2.2" marker-end="url(#arr)"/>
+<rect x="544" y="478" width="540" height="84" rx="12" fill="#f6f8f0" stroke="#d8dfcd"/>
+<text x="566" y="510" font-size="12.6" fill="#33413a">100+ single-tenant CPU pods consolidated onto one shared GPU cluster</text>
+<text x="566" y="538" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">OPERATIONAL MECHANISM</text>
+<line x1="1084" y1="520" x2="1144" y2="520" stroke="#8a4a12" stroke-width="2.2" marker-end="url(#arra)"/>
+<rect x="1148" y="468" width="372" height="104" rx="12" fill="#fbf7ec" stroke="#e3d9bd"/>
+<text x="1170" y="508" font-size="14.5" font-weight="700" fill="#8a4a12">&#8722;58% hosting &#183; &#8722;$240k/yr cloud spend</text>
+<text x="1170" y="542" font-size="11.5" fill="#8a4a12" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">FINANCIAL OUTCOME</text>
+<rect x="40" y="592" width="440" height="104" rx="12" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="592" width="6" height="104" rx="3" fill="#1b2733"/>
+<text x="62" y="626" font-size="14.5" font-weight="700" fill="#16232e">Ticket triage MTTR 35 &#8594; 8 min</text>
+<text x="62" y="650" font-size="12" fill="#5c6b60">Fine-tuned BERT sentiment + issue routing</text>
+<text x="62" y="672" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">TECHNICAL ACHIEVEMENT</text>
+<line x1="480" y1="644" x2="540" y2="644" stroke="#1b2733" stroke-width="2.2" marker-end="url(#arr)"/>
+<rect x="544" y="602" width="540" height="84" rx="12" fill="#f6f8f0" stroke="#d8dfcd"/>
+<text x="566" y="634" font-size="12.6" fill="#33413a">work orders land on the right on-duty engineer&#8217;s device in seconds</text>
+<text x="566" y="662" font-size="11.5" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">OPERATIONAL MECHANISM</text>
+<line x1="1084" y1="644" x2="1144" y2="644" stroke="#8a4a12" stroke-width="2.2" marker-end="url(#arra)"/>
+<rect x="1148" y="592" width="372" height="104" rx="12" fill="#fbf7ec" stroke="#e3d9bd"/>
+<text x="1170" y="632" font-size="14.5" font-weight="700" fill="#8a4a12">+3% repeat bookings &#183; CLV protected</text>
+<text x="1170" y="666" font-size="11.5" fill="#8a4a12" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">FINANCIAL OUTCOME</text>
+<text x="44" y="734" font-size="12.5" fill="#8a958b">Aggregate modeled impact: &gt;$8.3M annualized &#8212; figures are portfolio-level results; all client and property identifiers are withheld.</text>
+</svg>

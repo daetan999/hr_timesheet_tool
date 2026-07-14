@@ -1,0 +1,39 @@
+# Triton Inference Server model configuration (illustrative blueprint)
+# Dynamic batching + multi-model GPU concurrency: the two levers that lifted
+# GPU utilization from ~5% to 80%+ and cut hosting spend 58%.
+
+name: "pricing_agent_onnx"
+platform: "onnxruntime_onnx"
+max_batch_size: 64
+
+input [
+  {
+    name: "state_vector"
+    data_type: TYPE_FP32
+    dims: [ 24 ]   # OTB velocity, DTA window, competitor delta, TFT quantiles, calendar encodings
+  }
+]
+output [
+  {
+    name: "q_values"
+    data_type: TYPE_FP32
+    dims: [ 51 ]   # discretized bounded action space: -15% .. +35% rate moves
+  }
+]
+
+# Buffer requests up to 10 ms to form efficient GPU batches.
+dynamic_batching {
+  preferred_batch_size: [ 16, 32, 64 ]
+  max_queue_delay_microseconds: 10000
+}
+
+# Two execution instances share the GPU with other property models;
+# Triton loads/evicts property-specific variants on demand.
+instance_group [
+  {
+    count: 2
+    kind: KIND_GPU
+  }
+]
+
+# p99 < 150 ms end-to-end budget on the pricing endpoint.

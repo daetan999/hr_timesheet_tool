@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 1080" font-family="IBM Plex Sans, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1b2733"/></marker><marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e5d43"/></marker><marker id="arra" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a4a12"/></marker></defs>
+<rect x="0" y="0" width="1560" height="1080" rx="18" fill="#f2f5ea" stroke="#d8dfcd"/>
+<text x="44" y="52" font-size="15" letter-spacing="4" fill="#5c6b60" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-weight="600">MERIDIAN &#183; PLATFORM ARCHITECTURE</text>
+<text x="1516" y="52" text-anchor="end" font-size="13" fill="#8a958b" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">INGEST &#8594; FEATURIZE &#8594; TRAIN &#8594; SERVE &#8594; OBSERVE</text>
+<rect x="40" y="84" width="452" height="150" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="84" width="6" height="150" rx="3" fill="#1b2733"/>
+<text x="62" y="114" font-size="16" font-weight="700" fill="#16232e">Hospitality PMS</text>
+<text x="62" y="134" font-size="12.5" fill="#5c6b60">Property Management System integration</text>
+<text x="62" y="165" font-size="13" fill="#33413a">Real-time reservations, rates &amp; folio events</text>
+<text x="62" y="186" font-size="13" fill="#33413a">Oracle OHIP-class API &#183; REST / gRPC</text>
+<rect x="60" y="200" width="318" height="24" rx="7" fill="#eef2e4"/>
+<text x="70" y="217" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">reservations &#183; rates &#183; occupancy</text>
+<rect x="514" y="84" width="452" height="150" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="514" y="84" width="6" height="150" rx="3" fill="#1b2733"/>
+<text x="536" y="114" font-size="16" font-weight="700" fill="#16232e">Building IoT / BMS</text>
+<text x="536" y="134" font-size="12.5" fill="#5c6b60">Facility telemetry at the edge</text>
+<text x="536" y="165" font-size="13" fill="#33413a">BACnet utility + vibration telemetry</text>
+<text x="536" y="186" font-size="13" fill="#33413a">Edge gateways compute FFT features (NumPy)</text>
+<rect x="534" y="200" width="303" height="24" rx="7" fill="#eef2e4"/>
+<text x="544" y="217" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">15-min meter reads &#183; sensor streams</text>
+<rect x="988" y="84" width="532" height="150" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="988" y="84" width="6" height="150" rx="3" fill="#1b2733"/>
+<text x="1010" y="114" font-size="16" font-weight="700" fill="#16232e">External Market Signals</text>
+<text x="1010" y="134" font-size="12.5" fill="#5c6b60">Third-party demand context</text>
+<text x="1010" y="165" font-size="13" fill="#33413a">Weather APIs (CDD / HDD vs 18&#176;C base)</text>
+<text x="1010" y="186" font-size="13" fill="#33413a">Competitor rate scrapes &#183; local event calendars</text>
+<rect x="1008" y="200" width="179" height="24" rx="7" fill="#eef2e4"/>
+<text x="1018" y="217" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">hourly competitor delta</text>
+<line x1="266" y1="234" x2="266" y2="274" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<line x1="740" y1="234" x2="740" y2="274" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<line x1="1254" y1="234" x2="1254" y2="274" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="40" y="278" width="700" height="150" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="278" width="6" height="150" rx="3" fill="#1b2733"/>
+<text x="62" y="308" font-size="16" font-weight="700" fill="#16232e">Apache Kafka</text>
+<text x="62" y="328" font-size="12.5" fill="#5c6b60">Streaming backbone</text>
+<text x="62" y="359" font-size="13" fill="#33413a">Durable, partitioned-by-property event topics</text>
+<text x="62" y="380" font-size="13" fill="#33413a">Decouples bursty producers from ML consumers</text>
+<rect x="60" y="394" width="288" height="24" rx="7" fill="#eef2e4"/>
+<text x="70" y="411" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">high-velocity telemetry &amp; bookings</text>
+<rect x="780" y="278" width="740" height="150" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="780" y="278" width="6" height="150" rx="3" fill="#2e5d43"/>
+<text x="802" y="308" font-size="16" font-weight="700" fill="#16232e">Apache Airflow</text>
+<text x="802" y="328" font-size="12.5" fill="#5c6b60">Batch ETL &amp; workflow orchestration</text>
+<text x="802" y="359" font-size="13" fill="#33413a">Daily feature ETLs &#183; weather refresh &#183; training DAGs</text>
+<text x="802" y="380" font-size="13" fill="#33413a">Spark SQL window features over 90-day partitions</text>
+<rect x="800" y="394" width="245" height="24" rx="7" fill="#eef2e4"/>
+<text x="810" y="411" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">scheduled + event-triggered DAGs</text>
+<line x1="390" y1="428" x2="390" y2="468" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<line x1="1150" y1="428" x2="1150" y2="468" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="40" y="472" width="1480" height="172" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="472" width="6" height="172" rx="3" fill="#2e5d43"/>
+<text x="62" y="504" font-size="16" font-weight="700" fill="#16232e">Feast Feature Store &#8212; single source of feature truth</text>
+<text x="62" y="524" font-size="12.5" fill="#5c6b60">Guarantees zero offline-to-online drift &#183; 70%+ of engineered features shared across models</text>
+<rect x="62" y="540" width="700" height="86" rx="10" fill="#eef2e4" stroke="#7ba989"/>
+<text x="82" y="568" font-size="14" font-weight="700" fill="#2e5d43">Online store &#183; Redis Enterprise</text>
+<text x="82" y="590" font-size="12.5" fill="#33413a">Low-latency feature retrieval for live inference</text>
+<text x="82" y="612" font-size="12" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">SLA &lt;15 ms p99 &#183; freshness &lt;5 min</text>
+<rect x="786" y="540" width="712" height="86" rx="10" fill="#f6f8f0" stroke="#d8dfcd"/>
+<text x="806" y="568" font-size="14" font-weight="700" fill="#16232e">Offline store &#183; Snowflake</text>
+<text x="806" y="590" font-size="12.5" fill="#33413a">High-throughput point-in-time-correct training sets</text>
+<text x="806" y="612" font-size="12" fill="#5c6b60" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">batch retraining &#183; historical backfills</text>
+<line x1="390" y1="644" x2="390" y2="684" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<line x1="1150" y1="644" x2="1150" y2="684" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="40" y="688" width="700" height="170" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="688" width="6" height="170" rx="3" fill="#2e5d43"/>
+<text x="62" y="718" font-size="16" font-weight="700" fill="#16232e">Training &amp; Model Registry</text>
+<text x="62" y="738" font-size="12.5" fill="#5c6b60">Reproducible experimentation to governed release</text>
+<text x="62" y="769" font-size="13" fill="#33413a">EKS GPU training jobs &#183; every run tracked in MLflow</text>
+<text x="62" y="790" font-size="13" fill="#33413a">ONNX artifacts &#183; Staging &#8594; Production promotion</text>
+<text x="62" y="811" font-size="13" fill="#33413a">gated by automated integration test suites</text>
+<rect x="60" y="824" width="332" height="24" rx="7" fill="#eef2e4"/>
+<text x="70" y="841" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">MLflow &#183; ONNX &#183; CI-gated promotion</text>
+<rect x="780" y="688" width="740" height="170" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="780" y="688" width="6" height="170" rx="3" fill="#8a4a12"/>
+<text x="802" y="718" font-size="16" font-weight="700" fill="#16232e">High-Throughput Inference</text>
+<text x="802" y="738" font-size="12.5" fill="#5c6b60">Triton Inference Server on AWS EKS</text>
+<text x="802" y="769" font-size="13" fill="#33413a">NVIDIA T4 pool &#183; dynamic batching (10 ms window)</text>
+<text x="802" y="790" font-size="13" fill="#33413a">100+ property models multiplexed in shared GPU memory</text>
+<text x="802" y="811" font-size="13" fill="#33413a">GPU utilization lifted ~5% &#8594; 80%+</text>
+<rect x="800" y="824" width="237" height="24" rx="7" fill="#eef2e4"/>
+<text x="810" y="841" font-size="11.5" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">p99 &lt;150 ms pricing endpoint</text>
+<line x1="744" y1="773" x2="776" y2="773" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="760.0" y="765.0" text-anchor="middle" font-size="12" fill="#5c6b60" font-style="italic">promote</text>
+<line x1="390" y1="858" x2="390" y2="898" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<line x1="1150" y1="858" x2="1150" y2="898" stroke="#1b2733" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="40" y="902" width="352" height="118" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="40" y="902" width="352" height="6" rx="3" fill="#2e5d43"/>
+<text x="58" y="934" font-size="14.5" font-weight="700" fill="#16232e">View 1 &#183; Portfolio Financials</text>
+<text x="58" y="956" font-size="11.8" fill="#33413a">TFT demand forecasting + DQN RL dynamic pricing</text>
+<text x="58" y="992" font-size="11.8" font-weight="600" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">+$4.8M annualized profit</text>
+<rect x="416" y="902" width="352" height="118" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="416" y="902" width="352" height="6" rx="3" fill="#1b2733"/>
+<text x="434" y="934" font-size="14.5" font-weight="700" fill="#16232e">View 2 &#183; Portfolio Management</text>
+<text x="434" y="956" font-size="11.8" fill="#33413a">t-SNE / K-Means peer clustering &#183; RF feasibility (IRR)</text>
+<text x="434" y="992" font-size="11.8" font-weight="600" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">context-aware capital allocation</text>
+<rect x="792" y="902" width="352" height="118" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="792" y="902" width="352" height="6" rx="3" fill="#2e5d43"/>
+<text x="810" y="934" font-size="14.5" font-weight="700" fill="#16232e">View 3 &#183; Sustainability (ESG)</text>
+<text x="810" y="956" font-size="11.8" fill="#33413a">LSTM autoencoder leak detection &#183; SARIMAX HVAC load</text>
+<text x="810" y="992" font-size="11.8" font-weight="600" fill="#2e5d43" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">&#8722;14% utility waste &#183; &#8722;$1.8M OpEx</text>
+<rect x="1168" y="902" width="352" height="118" rx="14" fill="#ffffff" stroke="#d8dfcd"/>
+<rect x="1168" y="902" width="352" height="6" rx="3" fill="#8a4a12"/>
+<text x="1186" y="934" font-size="14.5" font-weight="700" fill="#16232e">View 4 &#183; Property Operations</text>
+<text x="1186" y="956" font-size="11.8" fill="#33413a">Weibull survival maintenance &#183; BERT ticket routing</text>
+<text x="1186" y="992" font-size="11.8" font-weight="600" fill="#8a4a12" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace">&#8722;42% downtime &#183; MTTR 35&#8594;8 min</text>
+<path d="M1520,773 H1544 V353 H1524" fill="none" stroke="#8a4a12" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arra)"/>
+<text x="1538" y="560" text-anchor="middle" font-size="11.5" fill="#8a4a12" font-style="italic" transform="rotate(-90 1538 560)">Evidently drift monitor &#8594; retraining webhook</text>
+<text x="44" y="1054" font-size="12.5" fill="#8a958b">Sanitized architectural blueprint &#8212; vendor-neutral integration names; no client identifiers, endpoints, or production configuration are represented.</text>
+</svg>

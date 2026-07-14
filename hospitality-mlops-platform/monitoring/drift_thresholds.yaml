@@ -1,0 +1,17 @@
+# Drift monitoring policy (illustrative blueprint).
+# Three tiers, three statistics, three automated responses.
+
+feature_drift:
+  statistic: wasserstein_distance
+  threshold: 0.15
+  response: warn                 # surfaced to dashboards + weekly review
+
+target_drift:
+  statistic: population_stability_index
+  threshold: 0.20
+  response: retrain              # webhook -> airflow dag: retrain_evaluate_promote
+
+concept_drift:
+  statistic: page_hinkley
+  threshold_sigma: 3.0
+  response: halt_and_page        # pause automated pricing; page data-science on-call
