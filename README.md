@@ -7,6 +7,10 @@
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](#)
 [![Code Style](https://img.shields.io/badge/code%20style-PEP8-black)](#)
 
+> **Portfolio** · [AI-infrastructure solutions-engineering hub](https://github.com/daetan999/technical_resume) · [value-engineering playbook — TCO / ROI](https://github.com/daetan999/technical_resume/blob/main/docs/value-engineering.md)
+>
+> **Infra-buyer's-eye value:** proof of end-to-end solution delivery — real UX, a relational data model built for 1:1 SQL promotion, and a payroll-ready hand-off — not just an architecture diagram.
+
 ---
 
 ## Executive Problem Statement
