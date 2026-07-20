@@ -1,214 +1,128 @@
-# HR Timesheet Tool — Enterprise Workforce Time-Capture Blueprint
+# HR Timesheet Tool — Workforce Time-Capture Blueprint
 
-<!-- Badges: replace placeholder targets with your CI/CD and registry URLs -->
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](#)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688)](#)
+[![FastAPI](https://img.shields.io/badge/FastAPI-application-009688)](#)
+[![Jinja2](https://img.shields.io/badge/Jinja2-server%20rendered-B41717)](#)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](#)
-[![Code Style](https://img.shields.io/badge/code%20style-PEP8-black)](#)
 
-> **Portfolio** · [AI-infrastructure solutions-engineering hub](https://github.com/daetan999/technical_resume) · [value-engineering playbook — TCO / ROI](https://github.com/daetan999/technical_resume/blob/main/docs/value-engineering.md)
->
-> **Infra-buyer's-eye value:** proof of end-to-end solution delivery — real UX, a relational data model built for 1:1 SQL promotion, and a payroll-ready hand-off — not just an architecture diagram.
+> Part of the [technical project portfolio](https://github.com/daetan999/technical_resume).
 
----
+## Overview
 
-## Executive Problem Statement
+This repository is a working public prototype for replacing paper and spreadsheet-based time capture with a structured review and payroll-export workflow.
 
-Manual workforce time tracking — paper time cards, ad-hoc spreadsheets, and email-based approvals — introduces transcription errors, payroll disputes, and multi-day processing bottlenecks that scale linearly with headcount. This system replaces that fragmented process with an automated, high-visibility capture-to-payroll workflow: structured ingestion of employee time submissions, deterministic validation and exception surfacing, and export of payroll-ready output in minutes rather than days. The result is a measurable reduction in payroll cycle time, an auditable review trail for every entry, and the elimination of the single largest source of payroll rework: unverified manual data entry.
+The application covers document intake, field normalization, deterministic validation, exception review, reference-data management, and Excel export. The public extraction layer runs in mock mode so the complete workflow can be evaluated without external credentials or employee data.
 
----
+## Public-Portfolio Boundary
 
-## Data Security & Scope Disclaimer
+- Employee records and sample submissions are synthetic.
+- Production extraction providers, HRIS integrations, payroll endpoints, credentials, and internal routing rules are excluded or mocked.
+- The file-backed public prototype is separated from the proposed production persistence design.
+- Screenshots are rendered from sanitized application templates.
 
-> **Architectural Blueprint Notice:** This repository serves strictly as a sanitized, open-source structural blueprint demonstrating system design, relational data schema, and workflow automation. All proprietary enterprise API integrations, sensitive webhooks, internal routing logic, and production access tokens have been completely omitted or mocked for security and compliance.
+## End-to-End Workflow
 
----
+![Timesheet submission pipeline](docs/assets/system-flow.svg)
 
-## Visual Architecture
+1. Create a submission period.
+2. Upload PDF, image, HEIC, or spreadsheet files.
+3. Normalize documents and convert extracted fields into structured rows.
+4. Validate dates, duplicate entries, reference codes, hours, and confidence thresholds.
+5. Route low-confidence and rule-breaking rows to an exception queue.
+6. Allow an HR reviewer to confirm or correct flagged entries.
+7. Preserve reviewed rows through idempotent updates and audit fields.
+8. Export approved entries into a payroll-ready Excel workbook.
 
-### System Flow — End-to-End Submission Pipeline
+## Data Model
 
-![End-to-end submission pipeline: User Interface → Payload Parsing & Validation → Relational DB Upsert → Event Triggers & Alerts](docs/assets/system-flow.svg)
+![Timesheet relational schema](docs/assets/data-schema.svg?v=2)
 
-<details>
-<summary><strong>Diagram-as-code source (Mermaid sequence diagram)</strong></summary>
+The target schema separates:
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Employee as User Interface<br/>(Submission Portal)
-    participant API as Backend API<br/>(Payload Parsing & Validation)
-    participant Extract as Extraction Service<br/>(Document → Structured Rows)
-    participant DB as Relational Database<br/>(Upsert Layer)
-    participant Events as Event Triggers<br/>(Alerts & Notifications)
-    actor HR as HR Reviewer
+- Employees
+- Submission periods
+- Timesheet entries
+- Approval workflows
+- Reference and SOP codes
 
-    Employee->>API: POST /sessions/{id}/upload (time card image / PDF / XLSX)
-    API->>API: Validate MIME type, size limits, session state
-    API->>Extract: Dispatch preprocessing + field extraction
-    Extract-->>API: Structured timesheet rows + confidence scores
-    API->>API: Business-rule validation (SOP codes, date bounds, duplicates)
-    API->>DB: UPSERT TimesheetLogs (idempotent by row_id — never overwrites reviewed data)
-    DB-->>API: Commit acknowledged
-    API->>Events: Emit "rows_pending_review" event
-    Events-->>HR: Alert: N entries flagged for review (low confidence / exceptions)
-    HR->>API: Confirm / correct flagged rows
-    API->>DB: UPSERT reviewed rows (review_status = approved)
-    API->>Events: Emit "session_export_ready" event
-    HR->>API: GET /sessions/{id}/export
-    API-->>HR: Payroll-ready Excel workbook (.xlsx)
-```
+The public prototype uses file-backed stores shaped to map directly onto transactional SQL tables in a production implementation.
 
-</details>
+## Product Views
 
-### Entity Relationship Diagram — Target Relational Schema
+| Session dashboard | Document upload |
+|---|---|
+| ![Session dashboard](docs/assets/screenshots/home.png) | ![Upload interface](docs/assets/screenshots/upload.png) |
 
-![Entity relationship diagram: EMPLOYEES, SUBMISSION_SESSIONS, TIMESHEET_LOGS, APPROVAL_WORKFLOWS, and SOP_CODES with primary and foreign keys](docs/assets/data-schema.svg?v=2)
+| Exception review | Worker masterlist |
+|---|---|
+| ![Review queue](docs/assets/screenshots/review.png) | ![Worker masterlist](docs/assets/screenshots/workers.png) |
 
-<details>
-<summary><strong>Diagram-as-code source (Mermaid ERD)</strong></summary>
+| SOP code glossary |
+|---|
+| ![SOP code setup](docs/assets/screenshots/sop-codes.png) |
 
-```mermaid
-erDiagram
-    EMPLOYEES ||--o{ TIMESHEET_LOGS : "submits"
-    EMPLOYEES ||--o{ APPROVAL_WORKFLOWS : "reviews as approver"
-    TIMESHEET_LOGS ||--o{ APPROVAL_WORKFLOWS : "governed by"
-    SUBMISSION_SESSIONS ||--o{ TIMESHEET_LOGS : "batches"
-    SOP_CODES ||--o{ TIMESHEET_LOGS : "classifies"
+## Technical Design
 
-    EMPLOYEES {
-        uuid employee_id PK
-        string full_name
-        string department
-        string employment_type
-        date hire_date
-        boolean active
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    SUBMISSION_SESSIONS {
-        uuid session_id PK
-        string period_label
-        string status
-        timestamp created_at
-        timestamp closed_at
-    }
-
-    TIMESHEET_LOGS {
-        uuid row_id PK
-        uuid employee_id FK
-        uuid session_id FK
-        string sop_code FK
-        date work_date
-        time clock_in
-        time clock_out
-        decimal hours_computed
-        decimal confidence_score
-        string review_status
-        string source_document_ref
-        timestamp extracted_at
-        timestamp reviewed_at
-    }
-
-    APPROVAL_WORKFLOWS {
-        uuid workflow_id PK
-        uuid row_id FK
-        uuid approver_employee_id FK
-        string workflow_state
-        string decision
-        string decision_reason
-        timestamp assigned_at
-        timestamp decided_at
-    }
-
-    SOP_CODES {
-        string sop_code PK
-        string display_label
-        string category
-        boolean payroll_impacting
-    }
-```
-
-</details>
-
----
-
-## Product Snapshots
-
-> Snapshots below are rendered from the application's own templates running in **mock-extraction mode** with sanitized sample data — no production data, credentials, or live integrations are involved.
-
-### Review Queue — Exception-Driven HR Workflow
-
-The core of the product: extracted entries land in a triaged review queue where low-confidence rows are flagged with a concrete, human-readable reason before anything reaches payroll.
-
-![Review Extraction screen showing the triaged queue with flagged exceptions](docs/assets/screenshots/review.png)
-
-### Guided Monthly Workflow
-
-| Session Dashboard | Timesheet Upload |
-| --- | --- |
-| ![Home screen with new-month setup and in-progress sessions](docs/assets/screenshots/home.png) | ![Upload screen with batch file intake and stored-file registry](docs/assets/screenshots/upload.png) |
-
-| Worker Masterlist | SOP Code Glossary |
-| --- | --- |
-| ![Worker masterlist management screen](docs/assets/screenshots/workers.png) | ![SOP code setup screen with editable code glossary](docs/assets/screenshots/sop-codes.png) |
-
----
-
-## Technical Stack & Architectural Decisions
-
-| Layer | Technology | Architectural Justification |
+| Layer | Technology | Role |
 |---|---|---|
-| Runtime | **Python 3.11+** | Utilized for low-latency payload parsing and robust data validation before database insertion, with a mature ecosystem for document processing. |
-| API Framework | **FastAPI + Uvicorn (ASGI)** | Chosen for async-native request handling and automatic OpenAPI schema generation, enabling contract-first integration with downstream enterprise systems. |
-| Templating / UI | **Jinja2 server-side rendering** | Selected to keep the review workflow zero-build and deployable behind any corporate proxy without a frontend toolchain dependency. |
-| Document Processing | **PyMuPDF + Pillow (pillow-heif)** | Provides deterministic, in-process rasterization and normalization of PDF/HEIC/image submissions without external conversion services. |
-| Extraction Layer | **Pluggable extraction service (mocked in this blueprint)** | Abstracted behind a service interface so the production extraction provider can be swapped or upgraded without touching the ingestion or review pipeline. |
-| Persistence | **File-backed relational-shaped stores (blueprint) → SQL database (production)** | The schema above is intentionally relational so the blueprint's JSON/file stores map 1:1 onto PostgreSQL tables with idempotent upsert semantics. |
-| Export | **openpyxl** | Generates payroll-ready `.xlsx` workbooks natively, preserving formatting expected by downstream finance tooling. |
-| Configuration | **python-dotenv + versioned JSON config** | Twelve-factor separation of secrets (environment) from operational reference data (SOP codes, worker registry, crop templates). |
+| Runtime | Python 3.11+ | Validation, document processing, and export logic |
+| API | FastAPI · Uvicorn | Request handling and application routes |
+| UI | Jinja2 | Server-rendered review workflow without a frontend build step |
+| Document processing | PyMuPDF · Pillow | PDF and image normalization |
+| Extraction | Pluggable service boundary | Mocked publicly; replaceable in production |
+| Persistence | File-backed relational-shaped stores | Public prototype with a documented SQL promotion path |
+| Export | openpyxl | Payroll-ready Excel generation |
+| Configuration | Environment variables · versioned reference data | Separation of secrets and operational configuration |
 
----
+## Workflow Controls
 
-## Enterprise Extensibility & Scalability Roadmap
+- File type and size validation before processing
+- Idempotent row identifiers to prevent duplicate inserts
+- Explicit exception reasons for low-confidence or invalid entries
+- Reviewed-data protection during subsequent updates
+- Audit timestamps and approval status
+- Payroll export restricted to approved records
+- Mock mode as the default public configuration
 
-This skeleton is deliberately structured so that each layer can be promoted to managed enterprise infrastructure independently, without rewriting the core workflow.
+## Production Extension Path
 
-### Data Warehousing
+A production implementation could promote individual layers independently:
 
-- **Migration path:** Promote the file-backed session and timesheet stores to a transactional PostgreSQL instance, then stream committed rows into a managed cloud data warehouse (**Google BigQuery** or **Snowflake**) via change-data-capture.
-- **BI analytics:** The `TIMESHEET_LOGS` / `APPROVAL_WORKFLOWS` schema is star-schema-ready — warehouse materializations enable overtime trend analysis, department-level labor cost dashboards, and approval SLA reporting in tools such as Looker or Power BI.
-- **Retention & compliance:** Warehouse-tier storage enables policy-driven retention windows and immutable audit snapshots for labor-law compliance reviews.
+### Persistence and analytics
 
-### API Management
+- Transactional PostgreSQL or managed SQL database
+- Change-data-capture into BigQuery or Snowflake
+- Overtime, labor-cost, and approval-SLA reporting
+- Policy-based retention and audit snapshots
 
-- **API Gateway:** Front the FastAPI service with a managed gateway (e.g., Kong, Apigee, or AWS API Gateway) to enforce **rate limiting**, request quotas, and secure traffic routing across environments.
-- **Authentication:** Replace the blueprint's open local access with **OAuth2 / OIDC** (client-credentials for system integrations, authorization-code for HR reviewers), with scopes mapped to the approval workflow roles.
-- **Versioning & contracts:** FastAPI's generated OpenAPI specification becomes the published gateway contract, enabling consumer-driven contract testing for payroll and HRIS integrators.
+### Authentication and API governance
 
-### Event-Driven Messaging
+- OAuth2 or OIDC for reviewers
+- Service credentials for system integrations
+- API gateway rate limits and quotas
+- Published OpenAPI contract and integration tests
 
-- **Message broker:** Introduce **Apache Kafka** (or RabbitMQ for smaller footprints) between the ingestion API and downstream consumers, converting the blueprint's in-process event triggers into durable, replayable topics (`timesheet.rows.pending`, `timesheet.session.exported`).
-- **Asynchronous webhook streaming:** Outbound notifications to HRIS, payroll, and chat-ops endpoints are published to the broker and delivered by independent consumer workers with retry and dead-letter semantics — the API never blocks on a slow webhook.
-- **Real-time HR alerts:** Low-confidence extraction events and stalled approval workflows stream to a notification consumer, giving HR real-time visibility into exceptions instead of end-of-cycle surprises.
+### Event-driven processing
 
----
+- Kafka or RabbitMQ for durable workflow events
+- Independent notification workers
+- Retry and dead-letter handling
+- Real-time alerts for low-confidence rows and stalled approvals
 
-## Quick Start
+These items are documented as extension paths and are not represented as implemented in the public prototype.
+
+## Run Locally
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env   # extraction runs in mock mode by default
+cp .env.example .env
 uvicorn app:app --reload
 ```
 
-The application starts at `http://127.0.0.1:8000` with the extraction layer fully mocked — no external credentials required to evaluate the workflow end-to-end.
-
----
+The application starts at `http://127.0.0.1:8000`. Mock extraction is enabled by default.
 
 ## License
 
-Released under the MIT License. See badge placeholder above; add a `LICENSE` file before public distribution.
+Released under the MIT License.
