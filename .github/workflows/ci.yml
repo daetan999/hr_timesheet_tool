@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+
+      - name: Compile application
+        run: python -m compileall app.py services
+
+      - name: Run core service tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Verify published assets and links
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+
+          diagrams = sorted(Path("docs/assets").glob("*.svg"))
+          assert diagrams, "no SVG diagrams found in docs/assets"
+          for diagram in diagrams:
+              ET.parse(diagram)
+
+          pattern = re.compile(r"\[[^\]]+\]\((?!https?://|#)([^)#]+)")
+          missing = []
+          for document in sorted(Path(".").rglob("*.md")):
+              if ".github" in document.parts:
+                  continue
+              for target in pattern.findall(document.read_text(encoding="utf-8")):
+                  if not (document.parent / target).exists():
+                      missing.append(f"{document}: {target}")
+          if missing:
+              raise SystemExit("unresolved relative links:\n" + "\n".join(missing))
+
+          print(f"verified {len(diagrams)} SVG diagrams and all relative documentation links")
+          PY

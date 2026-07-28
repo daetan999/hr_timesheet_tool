@@ -1,14 +1,11 @@
-# HR Timesheet Tool — Workforce Time-Capture Blueprint
+# HR Timesheet & Approval Tool
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-9B2226?style=flat-square&labelColor=180D11)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3A2226?style=flat-square&labelColor=180D11)](requirements.txt)
-[![FastAPI](https://img.shields.io/badge/fastapi-0.136-3A2226?style=flat-square&labelColor=180D11)](requirements.txt)
-[![Jinja2](https://img.shields.io/badge/jinja2-server%20rendered-3A2226?style=flat-square&labelColor=180D11)](templates/base.html)
-[![Intake: pdf, jpg, png, heic](https://img.shields.io/badge/intake-pdf%20%C2%B7%20jpg%20%C2%B7%20png%20%C2%B7%20heic-3A2226?style=flat-square&labelColor=180D11)](services/file_processor.py)
-[![Export: Excel](https://img.shields.io/badge/export-excel-3A2226?style=flat-square&labelColor=180D11)](services/excel_exporter.py)
-[![Extraction: mock by default](https://img.shields.io/badge/extraction-mock%20by%20default-6F5257?style=flat-square&labelColor=180D11)](#public-portfolio-boundary)
-[![Data: synthetic](https://img.shields.io/badge/data-synthetic-6F5257?style=flat-square&labelColor=180D11)](#public-portfolio-boundary)
-[![Portfolio](https://img.shields.io/badge/portfolio-technical__resume-6F5257?style=flat-square&labelColor=180D11)](https://github.com/daetan999/technical_resume)
+[![CI](https://github.com/daetan999/hr_timesheet_tool/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/daetan999/hr_timesheet_tool/actions/workflows/ci.yml)
+[![Artifact](https://img.shields.io/badge/artifact-working%20prototype-9B2226?style=flat-square&labelColor=180D11)](#overview)
+[![Stack](https://img.shields.io/badge/stack-python%20%C2%B7%20fastapi%20%C2%B7%20jinja2-3A2226?style=flat-square&labelColor=180D11)](#technical-design)
+[![Data](https://img.shields.io/badge/data-synthetic%20%C2%B7%20mock%20extraction-6F5257?style=flat-square&labelColor=180D11)](#public-portfolio-boundary)
+[![License](https://img.shields.io/badge/license-MIT-6F5257?style=flat-square&labelColor=180D11)](LICENSE)
+[![Portfolio](https://img.shields.io/badge/portfolio-AI%20infrastructure%20solutions-6F5257?style=flat-square&labelColor=180D11)](https://github.com/daetan999/technical_resume)
 
 ## Overview
 
@@ -28,7 +25,7 @@ The application covers document intake, field normalization, deterministic valid
 ![Timesheet submission pipeline](docs/assets/system-flow.svg)
 
 1. Create a submission period.
-2. Upload PDF, image, HEIC, or spreadsheet files.
+2. Upload PDF, JPG, PNG, or HEIC files.
 3. Normalize documents and convert extracted fields into structured rows.
 4. Validate dates, duplicate entries, reference codes, hours, and confidence thresholds.
 5. Route low-confidence and rule-breaking rows to an exception queue.
@@ -126,6 +123,19 @@ uvicorn app:app --reload
 
 The application starts at `http://127.0.0.1:8000`. Mock extraction is enabled by default.
 
+## Verification
+
+```bash
+python -m compileall app.py services
+python -m unittest discover -s tests -v
+```
+
+CI runs the same Python checks, validates the SVG assets, and verifies relative documentation links.
+
 ## License
 
 Released under the [MIT License](LICENSE).
+
+---
+
+[Back to the AI Infrastructure Solutions Portfolio](https://github.com/daetan999/technical_resume)
