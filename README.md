@@ -1,6 +1,6 @@
 # HR Timesheet Tool — Workforce Time-Capture Blueprint
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-33413A?style=flat-square&labelColor=191B22)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-33413A?style=flat-square&labelColor=191B22)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-1B2733?style=flat-square&labelColor=191B22)](requirements.txt)
 [![FastAPI](https://img.shields.io/badge/fastapi-0.136-1B2733?style=flat-square&labelColor=191B22)](requirements.txt)
 [![Jinja2](https://img.shields.io/badge/jinja2-server%20rendered-1B2733?style=flat-square&labelColor=191B22)](templates/base.html)
@@ -130,4 +130,4 @@ The application starts at `http://127.0.0.1:8000`. Mock extraction is enabled by
 
 ## License
 
-Released under the MIT License.
+Released under the [MIT License](LICENSE).
