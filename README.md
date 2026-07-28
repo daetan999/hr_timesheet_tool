@@ -1,9 +1,14 @@
 # HR Timesheet Tool — Workforce Time-Capture Blueprint
 
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](#)
-[![FastAPI](https://img.shields.io/badge/FastAPI-application-009688)](#)
-[![Jinja2](https://img.shields.io/badge/Jinja2-server%20rendered-B41717)](#)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-33413A?style=flat-square&labelColor=191B22)](#license)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-1B2733?style=flat-square&labelColor=191B22)](requirements.txt)
+[![FastAPI](https://img.shields.io/badge/fastapi-0.136-1B2733?style=flat-square&labelColor=191B22)](requirements.txt)
+[![Jinja2](https://img.shields.io/badge/jinja2-server%20rendered-1B2733?style=flat-square&labelColor=191B22)](templates/base.html)
+[![Intake: pdf, jpg, png, heic](https://img.shields.io/badge/intake-pdf%20%C2%B7%20jpg%20%C2%B7%20png%20%C2%B7%20heic-1B2733?style=flat-square&labelColor=191B22)](services/file_processor.py)
+[![Export: Excel](https://img.shields.io/badge/export-excel-1B2733?style=flat-square&labelColor=191B22)](services/excel_exporter.py)
+[![Extraction: mock by default](https://img.shields.io/badge/extraction-mock%20by%20default-5C6B60?style=flat-square&labelColor=191B22)](#public-portfolio-boundary)
+[![Data: synthetic](https://img.shields.io/badge/data-synthetic-5C6B60?style=flat-square&labelColor=191B22)](#public-portfolio-boundary)
+[![Portfolio](https://img.shields.io/badge/portfolio-technical__resume-5C6B60?style=flat-square&labelColor=191B22)](https://github.com/daetan999/technical_resume)
 
 > Part of the [technical project portfolio](https://github.com/daetan999/technical_resume).
 
